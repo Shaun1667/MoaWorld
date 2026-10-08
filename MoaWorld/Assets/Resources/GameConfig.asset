@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc4c783477c1a2b47a3ddcceaf56a866, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.GameConfig
+  playerBaseHp: 100
+  startingMoaBalls: 5
+  hpRegenDelaySeconds: 5
+  hpRegenPerSecond: 2
+  armorTiers:
+  - hpBonus: 100
+    price: 100
+  - hpBonus: 250
+    price: 250
+  - hpBonus: 400
+    price: 500
+  - hpBonus: 600
+    price: 900
+  - hpBonus: 1000
+    price: 1500
+  potionTiers:
+  - healAmount: 100
+    price: 20
+  - healAmount: 200
+    price: 35
+  - healAmount: 300
+    price: 50
+  - healAmount: 400
+    price: 65
+  - healAmount: 500
+    price: 80
+  moaBallPrice: 10
+  captureRateAtFullHp: 0.05
+  captureRateAtZeroHp: 0.9
+  moaLevelCap: 100
+  ivMin: 0
+  ivMax: 31
+  expCurveMultiplier: 1.2
+  advantageDamageMultiplier: 1.5
+  disadvantageDamageMultiplier: 0.67
+  wildAggroRange: 8
+  wildRespawnSeconds: 60
+  wildCoinDropMin: 5
+  wildCoinDropMax: 15
+  coinDespawnMinutes: 15
+  moaBoxHealMinutes: 10
+  maxPartySize: 6
+  storagePageSize: 30
+  storagePageCount: 30
+  dayNightCycleMinutes: 15
+  maxPlayers: 20
