@@ -26,8 +26,7 @@ namespace MoaWorld
         public bool IsFull => stored.Count >= Capacity;
         public bool IsNearBox => MoaBox.Instance != null && MoaBox.Instance.IsInRange(transform.position);
 
-        // TBD: switch to a world clock that is saved with the world, so healing continues across sessions.
-        private static double Now => Time.timeAsDouble;
+        private static double Now => WorldClock.Instance != null ? WorldClock.Instance.WorldTime : Time.timeAsDouble;
         private static double HealSeconds => GameConfig.Instance.moaBoxHealMinutes * 60.0;
 
         public event Action Changed;

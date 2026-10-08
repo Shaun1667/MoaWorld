@@ -3,15 +3,26 @@ using UnityEngine;
 namespace MoaWorld
 {
     // Floating marker above the local player's current target.
-    public class TargetMarker : MonoBehaviour
+    public class TargetMarker : LocalPlayerView
     {
         private const float HeightAboveTarget = 0.6f;
         private const float BobAmplitude = 0.1f;
         private const float BobSpeed = 3f;
         private const float SpinSpeed = 120f;
 
-        [SerializeField] private PlayerTargeting targeting;
         [SerializeField] private GameObject visual;
+
+        private PlayerTargeting targeting;
+
+        protected override void Bind(GameObject player)
+        {
+            targeting = player.GetComponent<PlayerTargeting>();
+        }
+
+        protected override void Unbind()
+        {
+            targeting = null;
+        }
 
         private void LateUpdate()
         {

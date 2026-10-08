@@ -104,6 +104,7 @@ GameObject:
   - component: {fileID: 5323648006339016381}
   - component: {fileID: 4765812770969606935}
   - component: {fileID: 4442613122071901263}
+  - component: {fileID: 7512086668192568270}
   m_Layer: 0
   m_Name: OwnedMoa
   m_TagString: Untagged
@@ -202,6 +203,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1ef10e5a530cdd4d81e9b050586a49a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.SummonedMoa
+--- !u!114 &7512086668192568270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4952874838535416665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8367b8b49bf8548949dd159d64fcac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.MoaNameplate
 --- !u!1 &6966544817883735785
 GameObject:
   m_ObjectHideFlags: 0

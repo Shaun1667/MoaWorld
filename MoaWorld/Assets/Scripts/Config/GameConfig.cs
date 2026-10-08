@@ -119,13 +119,22 @@ namespace MoaWorld
         public int coinDespawnMinutes = 15;
         public float moaBoxHealMinutes = 10f;
         public float moaBoxInteractRange = 3f;
+        public float shopInteractRange = 3f;
+        public float coinPickupRadius = 1.5f;
         public int maxPartySize = 6;
         public int storagePageSize = 30;
         public int storagePageCount = 30;
 
         [Header("World (confirmed values)")]
-        public int dayNightCycleMinutes = 15;
+        [UnityEngine.Serialization.FormerlySerializedAs("dayNightCycleMinutes")]
+        public float dayNightPhaseMinutes = 15f; // day lasts this long, then night lasts this long
         public int maxPlayers = 20;
+
+        [Header("Network")]
+        public ushort gamePort = 7777;
+        public ushort discoveryPort = 47777;
+        public float discoveryBroadcastSeconds = 1f;
+        public float discoveryRoomTimeoutSeconds = 3f;
 
         public Color GetElementColor(MoaElement element)
         {

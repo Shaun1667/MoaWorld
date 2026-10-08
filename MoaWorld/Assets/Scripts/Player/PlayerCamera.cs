@@ -4,29 +4,29 @@ namespace MoaWorld
 {
     // Third-person orbit camera. Cursor is hidden and locked by default and mouse movement orbits;
     // holding Alt or having a menu open frees the cursor and pauses orbiting. Scroll to zoom.
-    public class PlayerCamera : MonoBehaviour
+    public class PlayerCamera : LocalPlayerView
     {
-        [SerializeField] private Transform target;
-
+        private Transform target;
         private float yaw;
         private float pitch = 20f;
         private float distance;
         private bool cursorFree;
 
-        public Transform Target
-        {
-            get => target;
-            set => target = value;
-        }
-
         private void Start()
         {
             distance = GameConfig.Instance.cameraDistance;
-            if (target != null)
-            {
-                yaw = target.eulerAngles.y;
-            }
             ApplyCursorState();
+        }
+
+        protected override void Bind(GameObject player)
+        {
+            target = player.transform;
+            yaw = target.eulerAngles.y;
+        }
+
+        protected override void Unbind()
+        {
+            target = null;
         }
 
         private void Update()

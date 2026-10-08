@@ -10,6 +10,8 @@ namespace MoaWorld
     {
         private const float HomeStopDistance = 0.5f;
 
+        [SerializeField] private CoinPickup coinPrefab;
+
         private MoaUnit unit;
         private CharacterController body;
         private Renderer[] renderers;
@@ -121,6 +123,9 @@ namespace MoaWorld
 
         private void OnFainted(Combatant attacker)
         {
+            GameConfig config = GameConfig.Instance;
+            CoinPickup coins = Instantiate(coinPrefab, transform.position, Quaternion.identity);
+            coins.Initialize(UnityEngine.Random.Range(config.wildCoinDropMin, config.wildCoinDropMax + 1));
             Despawn();
         }
 

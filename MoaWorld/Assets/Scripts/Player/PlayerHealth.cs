@@ -40,12 +40,6 @@ namespace MoaWorld
             SetHp(MaxHp);
         }
 
-        // The Moa Box doubles as the start point.
-        private void Start()
-        {
-            movement.Teleport(SpawnPosition);
-        }
-
         private void OnEnable()
         {
             active.Add(this);

@@ -1,28 +1,36 @@
+using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace MoaWorld
 {
+    // Owner-only: reads input and moves the local player. Remote copies are moved by NetworkTransform.
     [RequireComponent(typeof(CharacterController))]
     public class PlayerMovement : MonoBehaviour
     {
         private const float GroundedStickVelocity = -2f;
 
-        [SerializeField] private Transform cameraTransform;
-
         private CharacterController controller;
+        private NetworkTransform networkTransform;
+        private Transform cameraTransform;
         private float verticalVelocity;
 
         private void Awake()
         {
             controller = GetComponent<CharacterController>();
-            if (cameraTransform == null && Camera.main != null)
-            {
-                cameraTransform = Camera.main.transform;
-            }
+            networkTransform = GetComponent<NetworkTransform>();
         }
 
         private void Update()
         {
+            if (cameraTransform == null)
+            {
+                if (Camera.main == null)
+                {
+                    return;
+                }
+                cameraTransform = Camera.main.transform;
+            }
+
             GameConfig config = GameConfig.Instance;
 
             Vector3 input = UiState.IsMenuOpen
@@ -54,7 +62,15 @@ namespace MoaWorld
         {
             // CharacterController overrides transform changes while enabled.
             controller.enabled = false;
-            transform.position = position;
+            if (networkTransform != null && networkTransform.IsSpawned && networkTransform.CanCommitToTransform)
+            {
+                // Teleport instead of a plain move so other players do not see the player slide across the map.
+                networkTransform.Teleport(position, transform.rotation, transform.localScale);
+            }
+            else
+            {
+                transform.position = position;
+            }
             controller.enabled = true;
             verticalVelocity = 0f;
         }
