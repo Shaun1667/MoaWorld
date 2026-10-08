@@ -3,7 +3,7 @@ using UnityEngine;
 namespace MoaWorld
 {
     // Third-person orbit camera. Cursor is hidden and locked by default and mouse movement orbits;
-    // holding Alt frees the cursor and pauses orbiting. Scroll to zoom.
+    // holding Alt or having a menu open frees the cursor and pauses orbiting. Scroll to zoom.
     public class PlayerCamera : MonoBehaviour
     {
         [SerializeField] private Transform target;
@@ -31,10 +31,10 @@ namespace MoaWorld
 
         private void Update()
         {
-            bool altHeld = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
-            if (altHeld != cursorFree)
+            bool wantFree = UiState.IsMenuOpen || Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            if (wantFree != cursorFree)
             {
-                cursorFree = altHeld;
+                cursorFree = wantFree;
                 ApplyCursorState();
             }
         }
@@ -70,11 +70,14 @@ namespace MoaWorld
                 pitch = Mathf.Clamp(pitch, config.cameraMinPitch, config.cameraMaxPitch);
             }
 
-            distance -= Input.GetAxis("Mouse ScrollWheel") * config.cameraZoomSpeed;
-            distance = Mathf.Clamp(distance, config.cameraMinDistance, config.cameraMaxDistance);
+            if (!UiState.IsMenuOpen)
+            {
+                distance -= Input.GetAxis("Mouse ScrollWheel") * config.cameraZoomSpeed;
+                distance = Mathf.Clamp(distance, config.cameraMinDistance, config.cameraMaxDistance);
+            }
 
             Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
-            Vector3 focus = target.position + Vector3.up * config.cameraTargetHeight;
+            Vector3 focus = target.position + Vector3.up * config.cameraTargetHeight + rotation * Vector3.right * config.cameraShoulderOffset;
             transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
         }
     }

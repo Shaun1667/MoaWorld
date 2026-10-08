@@ -12,6 +12,15 @@ GameObject:
   - component: {fileID: 3096323027427453268}
   - component: {fileID: 4551106209753346365}
   - component: {fileID: 5708110158628512009}
+  - component: {fileID: 69674151405700732}
+  - component: {fileID: 6951339687761521960}
+  - component: {fileID: 1851063624482192177}
+  - component: {fileID: 91203832632809610}
+  - component: {fileID: 1582023468590283146}
+  - component: {fileID: 4731325455648576712}
+  - component: {fileID: 6118558941428454689}
+  - component: {fileID: 1790609769433896414}
+  - component: {fileID: 2290414185776827770}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -85,7 +94,124 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d9c816d64e14a043a56cfccb2af4311, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerHealth
-  respawnPoint: {fileID: 0}
+--- !u!114 &69674151405700732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11e1d3e0b448f1c48a4bb15e9af8c6f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerTargeting
+--- !u!114 &6951339687761521960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a12e6971056a51d46b19a4fdc1e6d7fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.Targetable
+--- !u!114 &1851063624482192177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df02dd17f521f4945968238e924aef5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.HitFlash
+  bodyRenderer: {fileID: 6782829039671253932}
+--- !u!114 &91203832632809610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc3cee3fb6296554cb58043f9009d1f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerParty
+  debugStartingMoa:
+  - species: {fileID: 11400000, guid: 8e77e4016c872904e96d107778b8b4e5, type: 2}
+    level: 5
+  - species: {fileID: 11400000, guid: b2d5edd07ccc1094883dde6dbf67d039, type: 2}
+    level: 5
+  - species: {fileID: 11400000, guid: 99fd51b100dd9f64f9358ed99ff292cc, type: 2}
+    level: 5
+--- !u!114 &1582023468590283146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56fc6b38e0b3fe542b1e2c2148dce08b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerCombat
+  summonedMoaPrefab: {fileID: 4442613122071901263, guid: 2a4d450654042fc4795ff9859fa9a79e, type: 3}
+--- !u!114 &4731325455648576712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a71b4c788e9a3c4b9966a75b54f8ed1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerInventory
+--- !u!114 &6118558941428454689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5701b3a2a9d5ee6448efd5401d57daa0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerMoaBox
+--- !u!114 &1790609769433896414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 273601cb66a5b7a4fa384aa266deb0d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerCapture
+  ballPrefab: {fileID: 2995598083343398459, guid: 59d4ff6aaa1cad644bb97f071eda0146, type: 3}
+--- !u!114 &2290414185776827770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 786fde8b86c832f428c4c0a7b6f3dcec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerNotifications
 --- !u!1 &4521561423135697691
 GameObject:
   m_ObjectHideFlags: 0
