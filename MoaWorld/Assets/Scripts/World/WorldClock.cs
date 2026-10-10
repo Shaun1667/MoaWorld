@@ -1,14 +1,20 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
     // World time and the day/night cycle. Day and night each last GameConfig.dayNightPhaseMinutes.
-    // Drives the sun light, ambient light and sky exposure.
-    public class WorldClock : MonoBehaviour
+    // Drives the sun light, ambient light and sky exposure. The host's time is authoritative;
+    // clients run their own clock and snap to the host's value whenever it is resent.
+    public class WorldClock : NetworkBehaviour
     {
         private const float NewWorldStartProgress = 0.25f; // a new world starts mid-morning
+        private const float SyncInterval = 2f;
         private static readonly int ExposureId = Shader.PropertyToID("_Exposure");
+
+        private readonly NetworkVariable<double> syncedTime = new NetworkVariable<double>();
+        private float nextSyncTime;
 
         [SerializeField] private Light sun;
         [SerializeField] private float sunYaw = 230f;
@@ -33,7 +39,7 @@ namespace MoaWorld
 
         public static WorldClock Instance { get; private set; }
 
-        // Seconds since the world was created. Saved with the world once saving exists.
+        // Seconds since the world was created. Saved with the world.
         public double WorldTime { get; private set; }
 
         public bool IsNight { get; private set; }
@@ -62,7 +68,7 @@ namespace MoaWorld
             ApplyLighting();
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (Instance == this)
             {
@@ -73,11 +79,38 @@ namespace MoaWorld
                 RenderSettings.skybox = originalSkybox;
                 Destroy(skyboxInstance);
             }
+            base.OnDestroy();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsServer)
+            {
+                syncedTime.Value = WorldTime;
+                return;
+            }
+            syncedTime.OnValueChanged += OnSyncedTimeChanged;
+            SetWorldTime(syncedTime.Value);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            syncedTime.OnValueChanged -= OnSyncedTimeChanged;
+        }
+
+        private void OnSyncedTimeChanged(double previous, double current)
+        {
+            SetWorldTime(current);
         }
 
         private void Update()
         {
             WorldTime += Time.deltaTime;
+            if (IsServer && IsSpawned && Time.unscaledTime >= nextSyncTime)
+            {
+                nextSyncTime = Time.unscaledTime + SyncInterval;
+                syncedTime.Value = WorldTime;
+            }
             UpdatePhase();
             if (IsNight != wasNight)
             {
@@ -113,11 +146,21 @@ namespace MoaWorld
             }
         }
 
-        // For testing and for loading a saved world.
+        // For loading a saved world (server) and following the host's time (client).
         public void SetWorldTime(double seconds)
         {
             WorldTime = seconds;
             UpdatePhase();
+            if (IsServer && IsSpawned)
+            {
+                syncedTime.Value = WorldTime;
+            }
+        }
+
+        // A brand-new world starts mid-morning.
+        public void ResetToNewWorld()
+        {
+            SetWorldTime(PhaseSeconds * NewWorldStartProgress);
         }
     }
 }

@@ -98,6 +98,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d9c816d64e14a043a56cfccb2af4311, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerHealth
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &69674151405700732
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -147,13 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc3cee3fb6296554cb58043f9009d1f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerParty
-  debugStartingMoa:
-  - species: {fileID: 11400000, guid: 8e77e4016c872904e96d107778b8b4e5, type: 2}
-    level: 5
-  - species: {fileID: 11400000, guid: b2d5edd07ccc1094883dde6dbf67d039, type: 2}
-    level: 5
-  - species: {fileID: 11400000, guid: 99fd51b100dd9f64f9358ed99ff292cc, type: 2}
-    level: 5
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1582023468590283146
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -166,6 +161,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56fc6b38e0b3fe542b1e2c2148dce08b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerCombat
+  ShowTopMostFoldoutHeaderGroup: 1
   summonedMoaPrefab: {fileID: 4442613122071901263, guid: 2a4d450654042fc4795ff9859fa9a79e, type: 3}
 --- !u!114 &4731325455648576712
 MonoBehaviour:
@@ -179,6 +175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a71b4c788e9a3c4b9966a75b54f8ed1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerInventory
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &6118558941428454689
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -191,6 +188,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5701b3a2a9d5ee6448efd5401d57daa0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerMoaBox
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1790609769433896414
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203,6 +201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 273601cb66a5b7a4fa384aa266deb0d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerCapture
+  ShowTopMostFoldoutHeaderGroup: 1
   ballPrefab: {fileID: 2995598083343398459, guid: 59d4ff6aaa1cad644bb97f071eda0146, type: 3}
 --- !u!114 &2290414185776827770
 MonoBehaviour:
@@ -216,6 +215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 786fde8b86c832f428c4c0a7b6f3dcec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerNotifications
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &877817813276525428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -228,6 +228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48a22667951f1a74080dfc1f7bbc2e7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerShop
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &4854454492194774557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -240,6 +241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1d0ce48e90c9934299fcec03e734d48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerPotionUse
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &7020666800905388542
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -329,9 +331,6 @@ MonoBehaviour:
   ownerOnlyComponents:
   - {fileID: 4551106209753346365}
   - {fileID: 69674151405700732}
-  - {fileID: 1790609769433896414}
-  - {fileID: 1582023468590283146}
-  - {fileID: 4854454492194774557}
 --- !u!1 &4521561423135697691
 GameObject:
   m_ObjectHideFlags: 0

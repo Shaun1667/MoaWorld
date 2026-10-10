@@ -1,82 +1,142 @@
 using System;
-using UnityEngine;
+using Unity.Netcode;
 
 namespace MoaWorld
 {
-    // Server-owned once networking is added: only the host changes these values.
-    public class PlayerInventory : MonoBehaviour
+    // Coins, moa balls and potions. Only the server changes these; the owning client gets a synced copy.
+    public class PlayerInventory : NetworkBehaviour
     {
-        [NonSerialized] private int[] potions; // NonSerialized: Unity would otherwise hand us an empty array
+        private readonly NetworkVariable<int> coins = new NetworkVariable<int>(0, NetworkVariableReadPermission.Owner);
+        private readonly NetworkVariable<int> moaBalls = new NetworkVariable<int>(0, NetworkVariableReadPermission.Owner);
+        private readonly NetworkVariable<bool> hasEverCaptured = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Owner);
+        private NetworkList<int> potions;
 
-        public int Coins { get; private set; }
-        public int MoaBalls { get; private set; }
-        public bool HasEverCaptured { get; private set; }
-
-        // Lazy so UI that subscribes before this component's Awake can still read counts.
-        private int[] Potions => potions ?? (potions = new int[GameConfig.Instance.potionTiers.Length]);
+        public int Coins => coins.Value;
+        public int MoaBalls => moaBalls.Value;
+        public bool HasEverCaptured => hasEverCaptured.Value;
 
         public event Action Changed;
 
+        private void Awake()
+        {
+            // NetworkList must be created before the object spawns.
+            potions = new NetworkList<int>(null, NetworkVariableReadPermission.Owner);
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            coins.OnValueChanged += OnIntChanged;
+            moaBalls.OnValueChanged += OnIntChanged;
+            hasEverCaptured.OnValueChanged += OnBoolChanged;
+            potions.OnListChanged += OnPotionsChanged;
+            if (IsServer)
+            {
+                EnsurePotionSlots();
+            }
+            Changed?.Invoke();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            coins.OnValueChanged -= OnIntChanged;
+            moaBalls.OnValueChanged -= OnIntChanged;
+            hasEverCaptured.OnValueChanged -= OnBoolChanged;
+            potions.OnListChanged -= OnPotionsChanged;
+        }
+
+        private void OnIntChanged(int previous, int current) => Changed?.Invoke();
+        private void OnBoolChanged(bool previous, bool current) => Changed?.Invoke();
+        private void OnPotionsChanged(NetworkListEvent<int> change) => Changed?.Invoke();
+
+        private void EnsurePotionSlots()
+        {
+            int tierCount = GameConfig.Instance.potionTiers.Length;
+            while (potions.Count < tierCount)
+            {
+                potions.Add(0);
+            }
+        }
+
         public int GetPotionCount(int tier)
         {
-            return Potions[tier];
+            return potions != null && tier >= 0 && tier < potions.Count ? potions[tier] : 0;
         }
+
+        // Everything below is server only.
 
         public void AddCoins(int amount)
         {
-            Coins += amount;
-            Changed?.Invoke();
+            coins.Value += amount;
         }
 
         public bool TrySpendCoins(int amount)
         {
-            if (Coins < amount)
+            if (coins.Value < amount)
             {
                 return false;
             }
-            Coins -= amount;
-            Changed?.Invoke();
+            coins.Value -= amount;
             return true;
         }
 
         public void AddMoaBalls(int amount)
         {
-            MoaBalls += amount;
-            Changed?.Invoke();
+            moaBalls.Value += amount;
         }
 
         public bool TryUseMoaBall()
         {
-            if (MoaBalls <= 0)
+            if (moaBalls.Value <= 0)
             {
                 return false;
             }
-            MoaBalls--;
-            Changed?.Invoke();
+            moaBalls.Value--;
             return true;
         }
 
         public void AddPotion(int tier)
         {
-            Potions[tier]++;
-            Changed?.Invoke();
+            EnsurePotionSlots();
+            potions[tier]++;
         }
 
         public bool TryUsePotion(int tier)
         {
-            if (Potions[tier] <= 0)
+            if (GetPotionCount(tier) <= 0)
             {
                 return false;
             }
-            Potions[tier]--;
-            Changed?.Invoke();
+            potions[tier]--;
             return true;
         }
 
         public void MarkCaptured()
         {
-            HasEverCaptured = true;
-            Changed?.Invoke();
+            hasEverCaptured.Value = true;
+        }
+
+        public void WriteSave(PlayerSaveData data)
+        {
+            data.coins = coins.Value;
+            data.moaBalls = moaBalls.Value;
+            data.hasEverCaptured = hasEverCaptured.Value;
+            data.potions = new int[potions.Count];
+            for (int i = 0; i < potions.Count; i++)
+            {
+                data.potions[i] = potions[i];
+            }
+        }
+
+        public void ReadSave(PlayerSaveData data)
+        {
+            coins.Value = data.coins;
+            moaBalls.Value = data.moaBalls;
+            hasEverCaptured.Value = data.hasEverCaptured;
+            EnsurePotionSlots();
+            for (int i = 0; i < potions.Count; i++)
+            {
+                potions[i] = data.potions != null && i < data.potions.Length ? data.potions[i] : 0;
+            }
         }
     }
 }

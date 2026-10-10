@@ -19,10 +19,10 @@ namespace MoaWorld
         private void Awake()
         {
             block = new MaterialPropertyBlock();
-            GetComponent<Combatant>().Damaged += OnDamaged;
+            GetComponent<Combatant>().HitShown += OnHitShown;
         }
 
-        private void OnDamaged(Combatant attacker, float amount)
+        private void OnHitShown()
         {
             bodyRenderer.GetPropertyBlock(block);
             if (!flashing)

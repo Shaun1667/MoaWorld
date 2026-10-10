@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
+    // Player HP. The server applies damage, regen and potions; everyone sees the synced value
+    // (other players need it for the PvP target bar).
     [RequireComponent(typeof(PlayerMovement))]
     public class PlayerHealth : Combatant
     {
@@ -12,13 +15,22 @@ namespace MoaWorld
         private static readonly List<PlayerHealth> active = new List<PlayerHealth>();
         public static IReadOnlyList<PlayerHealth> Active => active;
 
+        private readonly NetworkVariable<float> hp = new NetworkVariable<float>();
+        private readonly NetworkVariable<int> armorTier = new NetworkVariable<int>(NoArmor);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnPlay()
+        {
+            active.Clear();
+        }
+
         private PlayerMovement movement;
         private Vector3 initialPosition;
         private float lastDamageTime = float.NegativeInfinity;
 
-        public float CurrentHp { get; private set; }
-        public int MaxHp { get; private set; }
-        public int HighestArmorTier { get; private set; } = NoArmor;
+        public float CurrentHp => hp.Value;
+        public int MaxHp => CalculateMaxHp(armorTier.Value);
+        public int HighestArmorTier => armorTier.Value;
 
         // Players respawn instantly with no penalty, so they never stay down.
         public override bool IsAlive => true;
@@ -36,66 +48,93 @@ namespace MoaWorld
             OwnerRoot = transform;
             movement = GetComponent<PlayerMovement>();
             initialPosition = transform.position;
-            RecalculateMaxHp();
-            SetHp(MaxHp);
         }
 
-        private void OnEnable()
+        public override void OnNetworkSpawn()
         {
+            base.OnNetworkSpawn();
+            hp.OnValueChanged += OnHpValueChanged;
+            armorTier.OnValueChanged += OnArmorChanged;
+            if (IsServer)
+            {
+                hp.Value = MaxHp;
+            }
             active.Add(this);
         }
 
-        private void OnDisable()
+        public override void OnNetworkDespawn()
         {
+            base.OnNetworkDespawn();
+            hp.OnValueChanged -= OnHpValueChanged;
+            armorTier.OnValueChanged -= OnArmorChanged;
             active.Remove(this);
         }
 
+        private void OnHpValueChanged(float previous, float current) => HpChanged?.Invoke(current, MaxHp);
+        private void OnArmorChanged(int previous, int current) => HpChanged?.Invoke(CurrentHp, MaxHp);
+
         private void Update()
         {
+            if (!IsServer)
+            {
+                return;
+            }
             GameConfig config = GameConfig.Instance;
             if (CurrentHp < MaxHp && Time.time - lastDamageTime >= config.hpRegenDelaySeconds)
             {
-                SetHp(Mathf.Min(MaxHp, CurrentHp + config.hpRegenPerSecond * Time.deltaTime));
+                hp.Value = Mathf.Min(MaxHp, CurrentHp + config.hpRegenPerSecond * Time.deltaTime);
             }
         }
 
+        // Server only.
         public void Heal(float amount)
         {
-            SetHp(Mathf.Min(MaxHp, CurrentHp + amount));
+            hp.Value = Mathf.Min(MaxHp, CurrentHp + amount);
         }
 
-        // Assumption (design TBD): only the highest owned armor tier applies, bonuses do not stack.
+        // Server only. Assumption (design TBD): only the highest owned armor tier applies, bonuses do not stack.
         public void SetHighestArmorTier(int tierIndex)
         {
-            HighestArmorTier = Mathf.Max(HighestArmorTier, tierIndex);
-            RecalculateMaxHp();
-            SetHp(Mathf.Min(CurrentHp, MaxHp));
+            armorTier.Value = Mathf.Max(armorTier.Value, tierIndex);
+            hp.Value = Mathf.Min(CurrentHp, MaxHp);
         }
 
         protected override void ApplyDamage(float amount)
         {
             lastDamageTime = Time.time;
-            SetHp(Mathf.Max(0f, CurrentHp - amount));
+            hp.Value = Mathf.Max(0f, CurrentHp - amount);
         }
 
         protected override void OnDepleted(Combatant attacker)
         {
-            movement.Teleport(SpawnPosition);
             lastDamageTime = float.NegativeInfinity;
-            SetHp(MaxHp);
+            hp.Value = MaxHp;
+            RespawnRpc(SpawnPosition);
         }
 
-        private void RecalculateMaxHp()
+        // Movement is owner-authoritative, so the owner performs the respawn teleport.
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+        private void RespawnRpc(Vector3 position)
+        {
+            movement.Teleport(position);
+        }
+
+        private static int CalculateMaxHp(int tier)
         {
             GameConfig config = GameConfig.Instance;
-            int armorBonus = HighestArmorTier == NoArmor ? 0 : config.armorTiers[HighestArmorTier].hpBonus;
-            MaxHp = config.playerBaseHp + armorBonus;
+            int armorBonus = tier == NoArmor ? 0 : config.armorTiers[tier].hpBonus;
+            return config.playerBaseHp + armorBonus;
         }
 
-        private void SetHp(float value)
+        public void WriteSave(PlayerSaveData data)
         {
-            CurrentHp = value;
-            HpChanged?.Invoke(CurrentHp, MaxHp);
+            data.armorTier = armorTier.Value;
+        }
+
+        public void ReadSave(PlayerSaveData data)
+        {
+            armorTier.Value = Mathf.Clamp(data.armorTier, NoArmor, GameConfig.Instance.armorTiers.Length - 1);
+            hp.Value = MaxHp;
         }
     }
 }

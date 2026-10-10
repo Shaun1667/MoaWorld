@@ -1,10 +1,11 @@
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
     // F1-F5 drink the potion of that tier. A potion is not used up when HP is already full.
     [RequireComponent(typeof(PlayerInventory), typeof(PlayerHealth), typeof(PlayerNotifications))]
-    public class PlayerPotionUse : MonoBehaviour
+    public class PlayerPotionUse : NetworkBehaviour
     {
         private PlayerInventory inventory;
         private PlayerHealth health;
@@ -19,7 +20,7 @@ namespace MoaWorld
 
         private void Update()
         {
-            if (UiState.IsMenuOpen)
+            if (!IsOwner || UiState.IsMenuOpen)
             {
                 return;
             }
@@ -29,25 +30,29 @@ namespace MoaWorld
             {
                 if (Input.GetKeyDown(KeyCode.F1 + tier))
                 {
-                    TryUse(tier);
+                    UseRpc(tier);
                 }
             }
         }
 
-        public bool TryUse(int tier)
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void UseRpc(int tier)
         {
+            if (tier < 0 || tier >= GameConfig.Instance.potionTiers.Length)
+            {
+                return;
+            }
             if (health.CurrentHp >= health.MaxHp)
             {
                 notifications.Notify("체력이 이미 가득 차 있어요");
-                return false;
+                return;
             }
             if (!inventory.TryUsePotion(tier))
             {
                 notifications.Notify($"포션({GameConfig.Instance.potionTiers[tier].healAmount})이 없어요");
-                return false;
+                return;
             }
             health.Heal(GameConfig.Instance.potionTiers[tier].healAmount);
-            return true;
         }
     }
 }

@@ -71,7 +71,7 @@ namespace MoaWorld
 
         private void RefreshParty()
         {
-            MoaUnit active = combat.ActiveMoa != null ? combat.ActiveMoa.Unit : null;
+            int activeSlot = combat.ActiveSlot;
             for (int i = 0; i < partyLabels.Length; i++)
             {
                 MoaInstance moa = party.Get(i);
@@ -83,7 +83,7 @@ namespace MoaWorld
                     continue;
                 }
 
-                bool isActive = active != null && active.Moa == moa;
+                bool isActive = i == activeSlot;
                 partyLabels[i].text = $"[{i + 1}] {moa.Species.displayName} Lv.{moa.level}{(moa.IsFainted ? "  기절" : string.Empty)}";
                 partyLabels[i].color = moa.IsFainted ? FaintedColor : isActive ? ActiveColor : Color.white;
                 partyBars[i].Set(moa.currentHp / moa.MaxHp);

@@ -1,9 +1,11 @@
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
     // Moa coins dropped where a wild moa fainted. The first player to walk over them takes them all.
-    public class CoinPickup : MonoBehaviour
+    // Pickup and expiry are decided by the server; every machine animates its own copy.
+    public class CoinPickup : NetworkBehaviour
     {
         private const float SpinSpeed = 180f;
         private const float BobAmplitude = 0.15f;
@@ -14,26 +16,40 @@ namespace MoaWorld
         private float despawnTime;
         private Vector3 basePosition;
 
+        // Server, before spawning.
         public void Initialize(int coinAmount)
         {
             amount = coinAmount;
             despawnTime = Time.time + GameConfig.Instance.coinDespawnMinutes * 60f;
-            basePosition = transform.position + Vector3.up * HoverHeight;
-            transform.position = basePosition;
+            transform.position += Vector3.up * HoverHeight;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            basePosition = transform.position;
         }
 
         private void Update()
         {
-            if (Time.time >= despawnTime)
+            if (!IsSpawned)
             {
-                Destroy(gameObject);
                 return;
             }
 
             transform.position = basePosition + Vector3.up * (Mathf.Sin(Time.time * BobSpeed) * BobAmplitude);
             transform.Rotate(0f, SpinSpeed * Time.deltaTime, 0f, Space.World);
 
-            // Pickup is decided by the server (host) once networking is added.
+            if (!IsServer)
+            {
+                return;
+            }
+
+            if (Time.time >= despawnTime)
+            {
+                NetworkObject.Despawn(true);
+                return;
+            }
+
             float radius = GameConfig.Instance.coinPickupRadius;
             foreach (PlayerHealth player in PlayerHealth.Active)
             {
@@ -43,7 +59,7 @@ namespace MoaWorld
                 {
                     player.GetComponent<PlayerInventory>().AddCoins(amount);
                     player.GetComponent<PlayerNotifications>().Notify($"모아 코인 +{amount}");
-                    Destroy(gameObject);
+                    NetworkObject.Despawn(true);
                     return;
                 }
             }

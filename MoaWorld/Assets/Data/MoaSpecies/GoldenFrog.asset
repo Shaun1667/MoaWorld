@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: GoldenFrog
   displayName: "\uAE08\uAC1C\uAD6C\uB9AC"
   element: 1
+  modelPrefab: {fileID: 8332561645911765954, guid: 08ae12bc020714c45a2a2d927f9033b4, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

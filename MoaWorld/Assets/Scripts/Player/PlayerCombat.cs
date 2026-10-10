@@ -1,16 +1,20 @@
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
     // Summons party moa with number keys 1-6 (same key again recalls, another key swaps; one moa out at a time)
     // and decides what the summoned moa fights: the selected target first, otherwise whoever recently attacked us.
+    // Input is read on the owner; summoning and target choice are decided on the server.
     [RequireComponent(typeof(PlayerParty), typeof(PlayerTargeting), typeof(PlayerHealth))]
     [RequireComponent(typeof(PlayerNotifications))]
-    public class PlayerCombat : MonoBehaviour
+    public class PlayerCombat : NetworkBehaviour
     {
         private const int NoSlot = -1;
 
         [SerializeField] private SummonedMoa summonedMoaPrefab;
+
+        private readonly NetworkVariable<int> activeSlot = new NetworkVariable<int>(NoSlot, NetworkVariableReadPermission.Owner);
 
         private PlayerParty party;
         private PlayerTargeting targeting;
@@ -19,11 +23,16 @@ namespace MoaWorld
         private Combatant recentAttacker;
         private float recentAttackTime = float.NegativeInfinity;
 
-        // Tracked by instance, not slot, so party reordering never points at the wrong moa.
+        // Server: the target the owner selected.
+        private Targetable selectedTarget;
+
+        // Server: tracked by instance, not slot, so party reordering never points at the wrong moa.
         private MoaInstance activeInstance;
 
+        // Server only.
         public SummonedMoa ActiveMoa { get; private set; }
-        public int ActiveSlot => activeInstance == null ? NoSlot : party.IndexOf(activeInstance);
+
+        public int ActiveSlot => IsServer ? (activeInstance == null ? NoSlot : party.IndexOf(activeInstance)) : activeSlot.Value;
 
         public Vector3 SummonPoint => transform.position + transform.right * 1.5f - transform.forward;
 
@@ -36,9 +45,31 @@ namespace MoaWorld
             health.Damaged += OnOwnSideDamaged;
         }
 
+        public override void OnNetworkSpawn()
+        {
+            if (IsOwner)
+            {
+                targeting.TargetChanged += OnLocalTargetChanged;
+            }
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            targeting.TargetChanged -= OnLocalTargetChanged;
+            if (IsServer)
+            {
+                Recall();
+            }
+        }
+
         private void Update()
         {
-            if (UiState.IsMenuOpen)
+            if (IsServer)
+            {
+                activeSlot.Value = ActiveSlot;
+            }
+
+            if (!IsOwner || UiState.IsMenuOpen)
             {
                 return;
             }
@@ -48,17 +79,29 @@ namespace MoaWorld
             {
                 if (Input.GetKeyDown(KeyCode.Alpha1 + slot))
                 {
-                    ToggleSummon(slot);
+                    ToggleSummonRpc(slot);
                 }
             }
         }
 
+        private void OnLocalTargetChanged(Targetable target)
+        {
+            NetworkObject targetObject = target != null ? target.GetComponent<NetworkObject>() : null;
+            SelectTargetRpc(targetObject != null ? new NetworkObjectReference(targetObject) : default);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SelectTargetRpc(NetworkObjectReference target)
+        {
+            selectedTarget = target.TryGet(out NetworkObject targetObject) ? targetObject.GetComponent<Targetable>() : null;
+        }
+
+        // Server only.
         public Combatant GetCombatTarget()
         {
-            Targetable selected = targeting.CurrentTarget;
-            if (selected != null)
+            if (selectedTarget != null && Vector3.Distance(transform.position, selectedTarget.transform.position) <= GameConfig.Instance.targetMaxDistance)
             {
-                Combatant selectedCombatant = selected.GetComponent<Combatant>();
+                Combatant selectedCombatant = selectedTarget.GetComponent<Combatant>();
                 if (IsValidEnemy(selectedCombatant))
                 {
                     return selectedCombatant;
@@ -69,6 +112,13 @@ namespace MoaWorld
             return inCombat && IsValidEnemy(recentAttacker) ? recentAttacker : null;
         }
 
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void ToggleSummonRpc(int slot)
+        {
+            ToggleSummon(slot);
+        }
+
+        // Server only.
         public void ToggleSummon(int slot)
         {
             MoaInstance moa = party.Get(slot);
@@ -89,22 +139,25 @@ namespace MoaWorld
 
             Recall();
             ActiveMoa = Instantiate(summonedMoaPrefab, SummonPoint, transform.rotation);
+            ActiveMoa.Unit.NetworkObject.Spawn(true);
             ActiveMoa.Initialize(moa, this);
             ActiveMoa.Unit.Damaged += OnOwnSideDamaged;
             ActiveMoa.Unit.Fainted += OnActiveMoaFainted;
             activeInstance = moa;
         }
 
+        // Server only.
         public void Recall()
         {
-            if (ActiveMoa != null)
+            if (ActiveMoa != null && ActiveMoa.Unit.IsSpawned)
             {
-                Destroy(ActiveMoa.gameObject);
+                ActiveMoa.Unit.NetworkObject.Despawn(true);
             }
             ActiveMoa = null;
             activeInstance = null;
         }
 
+        // Server only.
         public void RecallIfActive(MoaInstance moa)
         {
             if (moa == activeInstance)

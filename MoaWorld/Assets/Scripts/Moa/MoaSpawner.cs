@@ -41,14 +41,20 @@ namespace MoaWorld
 
         private void Update()
         {
-            // Only the server (host) runs wild moa.
+            // Only the server (host) runs wild moa. Spawned moa are destroyed when the session ends.
+            NetworkManager network = NetworkManager.Singleton;
+            if (network == null || !network.IsServer || !network.IsListening)
+            {
+                if (started)
+                {
+                    started = false;
+                    alive.Clear();
+                    pendingRespawnTimes.Clear();
+                }
+                return;
+            }
             if (!started)
             {
-                NetworkManager network = NetworkManager.Singleton;
-                if (network == null || !network.IsServer)
-                {
-                    return;
-                }
                 started = true;
                 for (int i = 0; i < maxAlive; i++)
                 {
@@ -77,7 +83,9 @@ namespace MoaWorld
 
             MoaInstance moa = MoaInstance.Create(species, UnityEngine.Random.Range(minLevel, maxLevel + 1));
             Quaternion rotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);
-            WildMoa wild = Instantiate(wildMoaPrefab, point, rotation, transform);
+            // Network objects cannot be parented under a plain scene object, so the moa sits at the root.
+            WildMoa wild = Instantiate(wildMoaPrefab, point, rotation);
+            wild.Unit.NetworkObject.Spawn(true);
             wild.Initialize(moa);
             wild.Despawned += OnDespawned;
             alive.Add(wild);

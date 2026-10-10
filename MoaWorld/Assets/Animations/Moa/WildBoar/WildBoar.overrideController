@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WildBoar
+  m_Controller: {fileID: 9100000, guid: f998ba24fe8406244bc67454fbfe98a8, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 7400000, guid: a278e03261d0da247b31aeba3000218f, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 1869e5244e1583d4d85984caa486dab5, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 1cc75396bbc78704e82933a198d89019, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 1200ba81481578c4fbb20ee6fb8dc24a, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: 3a411a7966b95a943a24cf2251a283e8, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 46771dfc51562f643b0eea218ebf1b1e, type: 2}
+  - m_OriginalClip: {fileID: 7400000, guid: f366ce4cbea08d849a67e6794c171ced, type: 2}
+    m_OverrideClip: {fileID: 7400000, guid: 059dac7f99c32f34db77d9bc6e43b4a6, type: 2}

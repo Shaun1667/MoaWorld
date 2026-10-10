@@ -9,6 +9,9 @@ namespace MoaWorld
         public string displayName;
         public MoaElement element;
 
+        [Tooltip("3D model with an Animator (built by MoaWorld > Build Moa Models). Empty: element-colored capsule.")]
+        public GameObject modelPrefab;
+
         [Header("Base stats at level 1 (TBD)")]
         public int baseHp = 50;
         public int baseAttack = 10;

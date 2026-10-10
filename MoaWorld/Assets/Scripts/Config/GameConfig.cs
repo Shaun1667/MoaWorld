@@ -136,6 +136,10 @@ namespace MoaWorld
         public float discoveryBroadcastSeconds = 1f;
         public float discoveryRoomTimeoutSeconds = 3f;
 
+        [Header("Save (host PC)")]
+        public string saveFileName = "world.json";   // stored under Application.persistentDataPath
+        public float autosaveSeconds = 60f;          // TBD: also saved when a player leaves and when the room closes
+
         public Color GetElementColor(MoaElement element)
         {
             switch (element)

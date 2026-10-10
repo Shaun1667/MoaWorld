@@ -3,6 +3,7 @@ using UnityEngine;
 namespace MoaWorld
 {
     // Owned moa out in the world: follows its owner and auto-attacks whatever the owner is fighting.
+    // Spawned and driven by the server; owner stays null on clients.
     [RequireComponent(typeof(MoaUnit))]
     public class SummonedMoa : MonoBehaviour
     {
@@ -16,6 +17,7 @@ namespace MoaWorld
             unit = GetComponent<MoaUnit>();
         }
 
+        // Server, after spawning.
         public void Initialize(MoaInstance moa, PlayerCombat ownerCombat)
         {
             owner = ownerCombat;

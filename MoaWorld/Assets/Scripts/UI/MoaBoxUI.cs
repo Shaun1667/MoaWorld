@@ -101,10 +101,9 @@ namespace MoaWorld
 
         private void OnPartySlotClicked(int slot)
         {
-            MoaInstance moa = party.Get(slot);
-            if (moa != null)
+            if (party.Get(slot) != null)
             {
-                box.Deposit(moa);
+                box.Deposit(slot);
             }
         }
 

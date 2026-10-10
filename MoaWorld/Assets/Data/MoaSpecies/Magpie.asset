@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Magpie
   displayName: "\uAE4C\uCE58"
   element: 0
+  modelPrefab: {fileID: 4839632378691223401, guid: a322dfc1735f85740ae45bd1746702a8, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

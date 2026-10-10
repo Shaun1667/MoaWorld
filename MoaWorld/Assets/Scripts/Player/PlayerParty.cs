@@ -1,43 +1,43 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
-    public class PlayerParty : MonoBehaviour
+    // Up to six moa that can be summoned. The server owns the list; the owning client receives a copy
+    // whenever anything in it changes (members, HP, level).
+    public class PlayerParty : NetworkBehaviour
     {
+        private const float SyncInterval = 0.2f;
+
         [Serializable]
-        private class DebugMoaEntry
+        private class Snapshot
         {
-            public MoaSpecies species;
-            public int level = 5;
+            public List<MoaInstance> members = new List<MoaInstance>();
         }
 
-        // Prototype only: lets combat be tested before capture exists. Clear this once capture works.
-        [SerializeField] private DebugMoaEntry[] debugStartingMoa;
-
         private readonly List<MoaInstance> members = new List<MoaInstance>();
+        private string lastSentJson;
+        private float nextSyncTime;
+        private bool ownerReady;
 
         public IReadOnlyList<MoaInstance> Members => members;
         public bool IsFull => members.Count >= GameConfig.Instance.maxPartySize;
 
         public event Action Changed;
 
-        private void Awake()
+        private void Update()
         {
-            if (debugStartingMoa == null)
+            if (!IsServer || IsOwner || !ownerReady || Time.unscaledTime < nextSyncTime)
             {
                 return;
             }
-            foreach (DebugMoaEntry entry in debugStartingMoa)
-            {
-                if (entry.species != null)
-                {
-                    TryAdd(MoaInstance.Create(entry.species, entry.level));
-                }
-            }
+            nextSyncTime = Time.unscaledTime + SyncInterval;
+            SendIfChanged();
         }
 
+        // Server only.
         public bool TryAdd(MoaInstance moa)
         {
             if (IsFull)
@@ -49,6 +49,7 @@ namespace MoaWorld
             return true;
         }
 
+        // Server only.
         public bool Remove(MoaInstance moa)
         {
             bool removed = members.Remove(moa);
@@ -67,6 +68,59 @@ namespace MoaWorld
         public MoaInstance Get(int slot)
         {
             return slot >= 0 && slot < members.Count ? members[slot] : null;
+        }
+
+        // Server: the owner asks for a fresh copy once it is ready to receive.
+        public void SendFull()
+        {
+            ownerReady = true;
+            lastSentJson = null;
+            SendIfChanged();
+        }
+
+        private void SendIfChanged()
+        {
+            string json = JsonUtility.ToJson(new Snapshot { members = members });
+            if (json == lastSentJson)
+            {
+                return;
+            }
+            lastSentJson = json;
+            ReceiveSnapshotRpc(json);
+        }
+
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+        private void ReceiveSnapshotRpc(string json)
+        {
+            // The host's own player already holds the real list.
+            if (IsServer)
+            {
+                return;
+            }
+            members.Clear();
+            members.AddRange(JsonUtility.FromJson<Snapshot>(json).members);
+            Changed?.Invoke();
+        }
+
+        public void WriteSave(PlayerSaveData data)
+        {
+            data.party = new List<MoaInstance>(members);
+        }
+
+        public void ReadSave(PlayerSaveData data)
+        {
+            members.Clear();
+            if (data.party != null)
+            {
+                foreach (MoaInstance moa in data.party)
+                {
+                    if (members.Count < GameConfig.Instance.maxPartySize && moa != null && moa.Species != null)
+                    {
+                        members.Add(moa);
+                    }
+                }
+            }
+            Changed?.Invoke();
         }
     }
 }

@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Bumblebee
   displayName: "\uB4A4\uC601\uBC8C"
   element: 0
+  modelPrefab: {fileID: 3732738825954310839, guid: 63c60e8aa3a5f764db67f2ee632588f2, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

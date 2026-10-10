@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace MoaWorld
 {
-    // Marks something the player can select as a target (wild moa now, other players later).
+    // Marks something the player can select as a target: wild moa, other players and their moa (PvP).
     public class Targetable : MonoBehaviour
     {
         private Collider bodyCollider;

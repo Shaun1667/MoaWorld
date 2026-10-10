@@ -121,7 +121,7 @@ namespace MoaWorld
             {
                 int count = ballCounts[i];
                 ballButtons[i] = UiFactory.CreateButton($"Ball{i}", root, RowPosition(0, i), new Vector2(ButtonWidth, ButtonHeight), 20,
-                    () => shop.TryBuyMoaBalls(count), out ballLabels[i]);
+                    () => shop.BuyMoaBalls(count), out ballLabels[i]);
             }
             ballsInfo = UiFactory.CreateText("BallsInfo", root, 20, TextAlignmentOptions.Center, new Vector2(0f, 1f), RowPosition(0, ballCounts.Length), new Vector2(ButtonWidth, 40f));
 
@@ -131,7 +131,7 @@ namespace MoaWorld
             {
                 int t = tier;
                 armorButtons[tier] = UiFactory.CreateButton($"Armor{tier}", root, RowPosition(1, tier), new Vector2(ButtonWidth, ButtonHeight), 18,
-                    () => shop.TryBuyArmor(t), out armorLabels[tier]);
+                    () => shop.BuyArmor(t), out armorLabels[tier]);
             }
 
             potionButtons = new Button[config.potionTiers.Length];
@@ -140,7 +140,7 @@ namespace MoaWorld
             {
                 int t = tier;
                 potionButtons[tier] = UiFactory.CreateButton($"Potion{tier}", root, RowPosition(2, tier), new Vector2(ButtonWidth, ButtonHeight), 18,
-                    () => shop.TryBuyPotion(t), out potionLabels[tier]);
+                    () => shop.BuyPotion(t), out potionLabels[tier]);
             }
 
             UiFactory.CreateText("Hint", root, 20, TextAlignmentOptions.Center, new Vector2(0.5f, 0f), new Vector2(0f, 35f), new Vector2(900f, 40f))

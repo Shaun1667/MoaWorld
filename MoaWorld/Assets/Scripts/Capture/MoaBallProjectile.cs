@@ -1,10 +1,11 @@
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
     // A thrown moa ball. Flies on a ballistic arc; a wild moa it hits is pulled inside for a capture attempt,
-    // anything else just consumes the ball.
-    public class MoaBallProjectile : MonoBehaviour
+    // anything else just consumes the ball. Simulated on the server; clients follow via NetworkTransform.
+    public class MoaBallProjectile : NetworkBehaviour
     {
         private const int MaxHits = 8;
         private const float ShakeAngle = 25f;
@@ -30,6 +31,10 @@ namespace MoaWorld
 
         private void Update()
         {
+            if (!IsServer || !IsSpawned)
+            {
+                return;
+            }
             if (capturing)
             {
                 UpdateCapture();
@@ -44,7 +49,7 @@ namespace MoaWorld
         {
             if (Time.time >= flightEndTime)
             {
-                Destroy(gameObject);
+                NetworkObject.Despawn(true);
                 return;
             }
 
@@ -111,14 +116,14 @@ namespace MoaWorld
             {
                 thrower.Notify("주인이 있는 모아는 잡을 수 없어요");
             }
-            Destroy(gameObject);
+            NetworkObject.Despawn(true);
         }
 
         private void UpdateCapture()
         {
             if (captured == null)
             {
-                Destroy(gameObject);
+                NetworkObject.Despawn(true);
                 return;
             }
 
@@ -130,7 +135,6 @@ namespace MoaWorld
                 return;
             }
 
-            // Capture is decided by the server (host) once networking is added.
             bool success = Random.value < MoaRules.CaptureChance(captured.Moa);
             if (thrower == null)
             {
@@ -146,15 +150,16 @@ namespace MoaWorld
                 captured.ReleaseCapture();
                 thrower.OnCaptureFailed(captured.Moa);
             }
-            Destroy(gameObject);
+            NetworkObject.Despawn(true);
         }
 
-        private void OnDestroy()
+        public override void OnDestroy()
         {
             if (thrower != null)
             {
                 thrower.OnBallFinished();
             }
+            base.OnDestroy();
         }
     }
 }

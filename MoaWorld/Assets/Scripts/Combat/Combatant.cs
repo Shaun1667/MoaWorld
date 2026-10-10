@@ -1,12 +1,16 @@
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
     // Anything that can be hit: players and moa (wild or owned).
+    // Damage is decided on the server only; clients just see the synced results.
     [RequireComponent(typeof(CharacterController))]
-    public abstract class Combatant : MonoBehaviour
+    public abstract class Combatant : NetworkBehaviour
     {
+        private readonly NetworkVariable<bool> suspended = new NetworkVariable<bool>();
+
         private CharacterController body;
 
         // Root transform of the owning player; null for wild moa. A player owns itself.
@@ -14,8 +18,13 @@ namespace MoaWorld
 
         public abstract bool IsAlive { get; }
 
-        // Temporarily out of combat (e.g. inside a moa ball during a capture attempt).
-        public bool IsSuspended { get; set; }
+        // Temporarily out of combat (e.g. inside a moa ball during a capture attempt). Set by the server.
+        public bool IsSuspended
+        {
+            get => suspended.Value;
+            set => suspended.Value = value;
+        }
+
         public bool IsAttackable => IsAlive && !IsSuspended;
 
         public abstract int Defense { get; }
@@ -24,12 +33,33 @@ namespace MoaWorld
 
         public float Radius => body.radius;
 
-        // (attacker, amount). Attacker may be null for environmental damage.
+        // Server only. (attacker, amount). Attacker may be null for environmental damage.
         public event Action<Combatant, float> Damaged;
+
+        // Every machine: a hit landed on this combatant (for visual feedback).
+        public event Action HitShown;
+
+        // Every machine: IsSuspended changed.
+        public event Action<bool> SuspendedChanged;
 
         protected virtual void Awake()
         {
             body = GetComponent<CharacterController>();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            suspended.OnValueChanged += OnSuspendedChanged;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            suspended.OnValueChanged -= OnSuspendedChanged;
+        }
+
+        private void OnSuspendedChanged(bool previous, bool current)
+        {
+            SuspendedChanged?.Invoke(current);
         }
 
         public bool IsFriendlyTo(Combatant other)
@@ -44,20 +74,26 @@ namespace MoaWorld
             return delta.magnitude;
         }
 
-        // Must only run on the server once networking is added.
         public void ReceiveDamage(float amount, Combatant attacker)
         {
-            if (!IsAttackable || amount <= 0f)
+            if (!IsServer || !IsAttackable || amount <= 0f)
             {
                 return;
             }
 
             ApplyDamage(amount);
             Damaged?.Invoke(attacker, amount);
+            ShowHitRpc();
             if (IsDepleted)
             {
                 OnDepleted(attacker);
             }
+        }
+
+        [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
+        private void ShowHitRpc()
+        {
+            HitShown?.Invoke();
         }
 
         protected abstract void ApplyDamage(float amount);

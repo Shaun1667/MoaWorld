@@ -1,14 +1,17 @@
+using Unity.Netcode;
 using UnityEngine;
 
 namespace MoaWorld
 {
     // Left click throws a moa ball at the crosshair. Captured moa go to the party, or the Moa Box when the party is full.
+    // The owner aims; the server spends the ball, flies it and decides the capture.
     [RequireComponent(typeof(PlayerInventory), typeof(PlayerParty), typeof(PlayerMoaBox))]
     [RequireComponent(typeof(PlayerTargeting), typeof(PlayerNotifications))]
-    public class PlayerCapture : MonoBehaviour
+    public class PlayerCapture : NetworkBehaviour
     {
         private const float HandHeight = 1.5f;
         private const float HandSideOffset = 0.4f;
+        private const float MaxThrowOriginOffset = 3f; // server tolerance for the client's hand position
 
         [SerializeField] private MoaBallProjectile ballPrefab;
 
@@ -30,28 +33,38 @@ namespace MoaWorld
 
         private void Update()
         {
-            GrantStartingBallsIfNeeded();
-
-            if (Cursor.lockState == CursorLockMode.Locked && Input.GetMouseButtonDown(0))
+            if (IsServer)
             {
-                TryThrow();
+                GrantStartingBallsIfNeeded();
+            }
+
+            if (IsOwner && Cursor.lockState == CursorLockMode.Locked && Input.GetMouseButtonDown(0))
+            {
+                Vector3 origin = transform.position + Vector3.up * HandHeight + transform.right * HandSideOffset;
+                Vector3 velocity = BallisticVelocity(origin, targeting.AimPoint, GameConfig.Instance.ballThrowSpeed);
+                ThrowRpc(origin, velocity);
             }
         }
 
         // Design: a player who has never caught a moa and has no balls receives the starting balls.
         private void GrantStartingBallsIfNeeded()
         {
-            if (!inventory.HasEverCaptured && inventory.MoaBalls == 0 && ballsInFlight == 0)
+            if (IsSpawned && !inventory.HasEverCaptured && inventory.MoaBalls == 0 && ballsInFlight == 0)
             {
                 inventory.AddMoaBalls(GameConfig.Instance.startingMoaBalls);
             }
         }
 
-        public void TryThrow()
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void ThrowRpc(Vector3 origin, Vector3 velocity)
         {
             if (party.IsFull && box.IsFull)
             {
                 Notify("모아 박스가 가득 찼어요");
+                return;
+            }
+            if (Vector3.Distance(origin, transform.position) > MaxThrowOriginOffset)
+            {
                 return;
             }
             if (!inventory.TryUseMoaBall())
@@ -60,13 +73,14 @@ namespace MoaWorld
                 return;
             }
 
-            Vector3 origin = transform.position + Vector3.up * HandHeight + transform.right * HandSideOffset;
-            Vector3 velocity = BallisticVelocity(origin, targeting.AimPoint, GameConfig.Instance.ballThrowSpeed);
+            velocity = Vector3.ClampMagnitude(velocity, GameConfig.Instance.ballThrowSpeed);
             MoaBallProjectile ball = Instantiate(ballPrefab, origin, Quaternion.LookRotation(velocity));
+            ball.NetworkObject.Spawn(true);
             ballsInFlight++;
             ball.Launch(this, velocity);
         }
 
+        // Server only.
         public void OnCaptureSucceeded(MoaInstance moa)
         {
             inventory.MarkCaptured();

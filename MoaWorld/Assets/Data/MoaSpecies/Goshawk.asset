@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Goshawk
   displayName: "\uCC38\uB9E4"
   element: 0
+  modelPrefab: {fileID: 2263912810786163835, guid: 6841e4b2108fd6d4885c236537a241da, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

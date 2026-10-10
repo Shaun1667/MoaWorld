@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: EagleOwl
   displayName: "\uC218\uB9AC\uBD80\uC5C9\uC774"
   element: 0
+  modelPrefab: {fileID: 4976052251764749881, guid: 2cd77fc9998587f49b54f10f0639ec4b, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

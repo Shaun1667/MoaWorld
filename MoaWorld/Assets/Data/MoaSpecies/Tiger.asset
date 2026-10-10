@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Tiger
   displayName: "\uD638\uB791\uC774"
   element: 2
+  modelPrefab: {fileID: 7572093457645752007, guid: 1de8db568a192024ba2d808808b27add, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

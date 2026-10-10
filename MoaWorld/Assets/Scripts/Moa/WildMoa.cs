@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace MoaWorld
 {
-    // Wild moa AI: fights back when hit, aggressive species attack nearby players,
+    // Wild moa AI (server only): fights back when hit, aggressive species attack nearby players,
     // and gives up once the fight drags it too far from its spawn point.
-    [RequireComponent(typeof(MoaUnit))]
+    [RequireComponent(typeof(MoaUnit), typeof(MoaModel))]
     public class WildMoa : MonoBehaviour
     {
         private const float HomeStopDistance = 0.5f;
@@ -14,7 +14,7 @@ namespace MoaWorld
 
         private MoaUnit unit;
         private CharacterController body;
-        private Renderer[] renderers;
+        private MoaModel model;
         private Vector3 home;
         private Combatant target;
         private Transform lastAttackerOwner;
@@ -30,9 +30,10 @@ namespace MoaWorld
         {
             unit = GetComponent<MoaUnit>();
             body = GetComponent<CharacterController>();
-            renderers = GetComponentsInChildren<Renderer>();
+            model = GetComponent<MoaModel>();
             unit.Damaged += OnDamaged;
             unit.Fainted += OnFainted;
+            unit.SuspendedChanged += SetInsideBall;
         }
 
         // The first ball to land owns the capture attempt; later balls are rejected until it resolves.
@@ -43,27 +44,25 @@ namespace MoaWorld
                 return false;
             }
             captureHolder = thrower;
-            SetInsideBall(true);
+            unit.IsSuspended = true;
+            unit.Stop();
             return true;
         }
 
         public void ReleaseCapture()
         {
             captureHolder = null;
-            SetInsideBall(false);
+            unit.IsSuspended = false;
         }
 
+        // Runs on every machine when the moa goes into or comes out of a ball.
         private void SetInsideBall(bool inside)
         {
-            unit.IsSuspended = inside;
-            unit.Stop();
             body.enabled = !inside;
-            foreach (Renderer r in renderers)
-            {
-                r.enabled = !inside;
-            }
+            model.SetHidden(inside);
         }
 
+        // Server, after spawning.
         public void Initialize(MoaInstance moa)
         {
             unit.Initialize(moa, null);
@@ -73,7 +72,7 @@ namespace MoaWorld
 
         private void Update()
         {
-            if (!unit.IsAttackable)
+            if (!unit.IsServer || !unit.IsAttackable)
             {
                 return;
             }
@@ -126,6 +125,7 @@ namespace MoaWorld
             GameConfig config = GameConfig.Instance;
             CoinPickup coins = Instantiate(coinPrefab, transform.position, Quaternion.identity);
             coins.Initialize(UnityEngine.Random.Range(config.wildCoinDropMin, config.wildCoinDropMax + 1));
+            coins.NetworkObject.Spawn(true);
             Despawn();
         }
 
@@ -152,11 +152,11 @@ namespace MoaWorld
             return Vector3.Distance(a, b);
         }
 
-        // Called when defeated or captured; the spawner schedules a replacement.
+        // Server: called when defeated or captured; the spawner schedules a replacement.
         public void Despawn()
         {
             Despawned?.Invoke(this);
-            Destroy(gameObject);
+            unit.NetworkObject.Despawn(true);
         }
     }
 }

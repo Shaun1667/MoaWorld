@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: SwallowtailButterfly
   displayName: "\uD638\uB791\uB098\uBE44"
   element: 0
+  modelPrefab: {fileID: 4875930726734660919, guid: c668afc2802048b4f9a8e60c18d84637, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: RatSnake
   displayName: "\uAD6C\uB801\uC774"
   element: 0
+  modelPrefab: {fileID: 1354316660775872990, guid: 346d691796c20954aae472001cb84358, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0
