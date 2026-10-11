@@ -15,6 +15,8 @@ namespace MoaWorld
     {
         private const string PlayerIdKey = "MoaWorld.PlayerId";
         private const int MaxPlayerIdLength = 64;
+        private const string RoomFullReason = "방이 가득 찼어요";
+        private const string InvalidPlayerReason = "접속 정보가 올바르지 않아요";
 
         private readonly Dictionary<ulong, string> playerIds = new Dictionary<ulong, string>();
 
@@ -135,7 +137,7 @@ namespace MoaWorld
             response.Approved = hasRoom && valid;
             response.CreatePlayerObject = response.Approved;
             response.Position = MoaBox.Instance != null ? MoaBox.Instance.SpawnPosition : (Vector3?)null;
-            response.Reason = !hasRoom ? "방이 가득 찼어요" : !valid ? "접속 정보가 올바르지 않아요" : null;
+            response.Reason = !hasRoom ? RoomFullReason : !valid ? InvalidPlayerReason : null;
             response.Pending = false;
 
             if (response.Approved)
@@ -189,7 +191,8 @@ namespace MoaWorld
             {
                 reason = "방에서 나왔어요";
             }
-            else if (!string.IsNullOrEmpty(network.DisconnectReason))
+            // Only our own reasons are shown; Netcode's built-in ones (e.g. host shutting down) are English.
+            else if (network.DisconnectReason == RoomFullReason || network.DisconnectReason == InvalidPlayerReason)
             {
                 reason = network.DisconnectReason;
             }

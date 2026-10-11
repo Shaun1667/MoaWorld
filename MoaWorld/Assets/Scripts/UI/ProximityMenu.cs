@@ -67,7 +67,7 @@ namespace MoaWorld
             {
                 Open();
             }
-            prompt.enabled = near && !IsOpen;
+            prompt.enabled = near && !IsOpen && !UiState.IsMenuOpen;
         }
 
         public void Open()
