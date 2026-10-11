@@ -18,6 +18,8 @@ namespace MoaWorld.EditorTools
         private const string SpeciesRoot = "Assets/Data/MoaSpecies";
         private const string BodyPath = "Hover/Body";
         private const string RiggedSuffix = "_Rigged.fbx"; // skeleton + clips made by Tools/Blender/rig_moa.py
+        private const string MaterialRoot = "Assets/Materials/Moa";
+        private const string CharacterShader = "MoaWorld/Stylized Character";
 
         private enum Style
         {
@@ -203,6 +205,7 @@ namespace MoaWorld.EditorTools
             float longest = Mathf.Max(meshSize.x, Mathf.Max(meshSize.y, meshSize.z));
             mesh.transform.localScale = Vector3.one * (entry.size / longest);
             skin.updateWhenOffscreen = false;
+            skin.sharedMaterial = GetCharacterMaterial(entry);
 
             var animator = mesh.GetComponent<Animator>();
             if (animator == null)
@@ -219,6 +222,44 @@ namespace MoaWorld.EditorTools
 
             species.modelPrefab = prefab;
             EditorUtility.SetDirty(species);
+        }
+
+        // One material per species on the stylized character shader, using the Varco3D albedo and normal maps.
+        private static Material GetCharacterMaterial(Entry entry)
+        {
+            EnsureFolder(MaterialRoot);
+            string path = $"{MaterialRoot}/{entry.speciesId}.mat";
+            Shader shader = Shader.Find(CharacterShader);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            string folder = $"{ModelRoot}/{entry.folder}";
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/model-material_0-base_color.png"));
+
+            string normalPath = $"{folder}/model-material_0-normal.png";
+            if (AssetImporter.GetAtPath(normalPath) is TextureImporter normalImporter && normalImporter.textureType != TextureImporterType.NormalMap)
+            {
+                normalImporter.textureType = TextureImporterType.NormalMap;
+                normalImporter.SaveAndReimport();
+            }
+            material.SetTexture("_BumpMap", AssetDatabase.LoadAssetAtPath<Texture2D>(normalPath));
+
+            // Look settings shared by every moa; tuned against the post-processing profile (VisualStyleBuilder).
+            material.SetFloat("_BumpScale", 0.6f);
+            material.SetFloat("_Wrap", 0.45f);
+            material.SetFloat("_Edge", 0.45f);
+            material.SetFloat("_Softness", 0.18f);
+            material.SetColor("_ShadeColor", new Color(1f, 0.7f, 0.58f));
+            material.SetFloat("_ShadeStrength", 0.18f);
+            material.SetFloat("_AmbientStrength", 0.85f);
+            material.SetFloat("_RimPower", 3.5f);
+            material.SetFloat("_RimStrength", 0.3f);
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         // Blender exports takes as "Armature|Idle"; they are renamed to the plain action names and looped as needed.

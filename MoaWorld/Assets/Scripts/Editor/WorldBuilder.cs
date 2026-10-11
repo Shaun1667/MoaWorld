@@ -19,6 +19,8 @@ namespace MoaWorld.EditorTools
         private const string TerrainGroupName = "Group Terrain";
         private const string TestSpawnerName = "MoaSpawner_Test";
         private const string GeneratedRoot = "Assets/World";
+        private const string TerrainMeshRoot = GeneratedRoot + "/Generated/Terrain";
+        private const float TileBorderEase = 0.12f; // fraction of the tile width over which its border drops to the ground
         private const string WildMoaPrefabPath = "Assets/Prefabs/WildMoa.prefab";
         private const string SpeciesRoot = "Assets/Data/MoaSpecies";
 
@@ -303,7 +305,7 @@ namespace MoaWorld.EditorTools
                 Object.DestroyImmediate(testSpawner);
             }
 
-            AddTerrainColliders();
+            PrepareTerrain();
 
             Transform root = new GameObject(RootName).transform;
             Transform spawnerRoot = NewChild(root, "Spawners");
@@ -338,21 +340,55 @@ namespace MoaWorld.EditorTools
         // ---------- terrain ----------
 
         // The hills, cliffs and mountains already in the scene have no colliders; players would walk through them.
-        private static void AddTerrainColliders()
+        // The hills, cliffs and mountains already in the scene are square tiles whose borders stand above the ground
+        // plane and end in a vertical wall, which looks like a floating slab. Each tile gets a copy of its mesh with
+        // the border eased down to the ground, plus a collider (they had none, so players walked through them).
+        private static void PrepareTerrain()
         {
             GameObject group = GameObject.Find(TerrainGroupName);
             if (group == null)
             {
                 return;
             }
+            EnsureFolder(TerrainMeshRoot);
+            int index = 0;
             foreach (MeshFilter filter in group.GetComponentsInChildren<MeshFilter>())
             {
-                if (filter.GetComponent<Collider>() == null)
+                // Always start from the asset pack's mesh so running again does not flatten the edges twice.
+                var original = PrefabUtility.GetCorrespondingObjectFromSource(filter);
+                Mesh source = original != null ? original.sharedMesh : filter.sharedMesh;
+                Mesh eased = SaveAsset(EaseTileBorder(source), $"{TerrainMeshRoot}/{filter.name}_{index++}.asset");
+                filter.sharedMesh = eased;
+
+                var collider = filter.GetComponent<MeshCollider>();
+                if (collider == null)
                 {
-                    filter.gameObject.AddComponent<MeshCollider>().sharedMesh = filter.sharedMesh;
+                    collider = filter.gameObject.AddComponent<MeshCollider>();
                 }
+                collider.sharedMesh = eased;
             }
             Physics.SyncTransforms();
+        }
+
+        private static Mesh EaseTileBorder(Mesh source)
+        {
+            Mesh mesh = Object.Instantiate(source);
+            mesh.name = source.name + "_Eased";
+            Bounds bounds = source.bounds;
+            Vector3[] vertices = mesh.vertices;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                Vector3 v = vertices[i];
+                float toEdgeX = Mathf.Min(v.x - bounds.min.x, bounds.max.x - v.x) / bounds.size.x;
+                float toEdgeZ = Mathf.Min(v.z - bounds.min.z, bounds.max.z - v.z) / bounds.size.z;
+                float t = Mathf.Clamp01(Mathf.Min(toEdgeX, toEdgeZ) / TileBorderEase);
+                v.y *= t * t * (3f - 2f * t); // smoothstep: ground level at the border, untouched inside
+                vertices[i] = v;
+            }
+            mesh.vertices = vertices;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         private static void BuildWorldEdge(Transform parent)
@@ -422,14 +458,27 @@ namespace MoaWorld.EditorTools
             return mesh;
         }
 
+        // Ground patches use the stylized ground shader (noise-varied shades of the patch color); water stays URP Lit.
         private static Material GetMaterial(string name, Color color, bool transparent)
         {
             string path = $"{GeneratedRoot}/Materials/{name}.mat";
+            Shader shader = Shader.Find(transparent ? "Universal Render Pipeline/Lit" : "MoaWorld/Stylized Ground");
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
-                material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            if (!transparent)
+            {
+                material.SetColor("_ColorA", color * 0.9f);
+                material.SetColor("_ColorB", color * 1.08f);
+                material.SetColor("_PatchColor", Color.Lerp(color, new Color(0.45f, 0.36f, 0.24f), 0.35f));
+                material.SetColor("_RockColor", Color.Lerp(color, new Color(0.55f, 0.52f, 0.48f), 0.6f));
+                material.SetFloat("_PatchAmount", 0.3f);
+                EditorUtility.SetDirty(material);
+                return material;
             }
             material.SetColor("_BaseColor", color);
             material.SetFloat("_Smoothness", transparent ? 0.85f : 0.1f);

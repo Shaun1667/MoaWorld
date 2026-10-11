@@ -26,12 +26,14 @@ namespace MoaWorld
         [SerializeField] private float dayAmbient = 1f;
         [SerializeField] private float daySkyMin = 0.5f;
         [SerializeField] private float daySkyMax = 1.3f;
+        [SerializeField] private Color dayFogColor = new Color(0.72f, 0.83f, 0.95f);
 
         [Header("Night")]
         [SerializeField] private Color nightLightColor = new Color(0.55f, 0.65f, 1f);
         [SerializeField] private float nightLight = 0.15f;
         [SerializeField] private float nightAmbient = 0.35f;
         [SerializeField] private float nightSky = 0.12f;
+        [SerializeField] private Color nightFogColor = new Color(0.08f, 0.1f, 0.18f);
 
         private Material originalSkybox;
         private Material skyboxInstance;
@@ -140,6 +142,8 @@ namespace MoaWorld
             }
 
             RenderSettings.ambientIntensity = IsNight ? nightAmbient : Mathf.Lerp(nightAmbient, dayAmbient, Mathf.Sqrt(arc));
+            // Distance haze follows the sky: light blue by day, dark blue at night.
+            RenderSettings.fogColor = IsNight ? nightFogColor : Color.Lerp(nightFogColor, dayFogColor, Mathf.Sqrt(arc));
             if (skyboxInstance != null && skyboxInstance.HasProperty(ExposureId))
             {
                 skyboxInstance.SetFloat(ExposureId, IsNight ? nightSky : Mathf.Lerp(daySkyMin, daySkyMax, arc));
