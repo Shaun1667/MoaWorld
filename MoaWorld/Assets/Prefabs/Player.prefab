@@ -26,6 +26,7 @@ GameObject:
   - component: {fileID: 7020666800905388542}
   - component: {fileID: 7305980294318010463}
   - component: {fileID: 6949741677544721213}
+  - component: {fileID: 6497998674069059217}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -331,6 +332,22 @@ MonoBehaviour:
   ownerOnlyComponents:
   - {fileID: 4551106209753346365}
   - {fileID: 69674151405700732}
+--- !u!114 &6497998674069059217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab0f511f7e99f91488606411d5681968, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerModel
+  trainerPrefabs:
+  - {fileID: 1307126677409129662, guid: c0358980c7b4f4b4f8542d3a4d3d53b2, type: 3}
+  - {fileID: 6440343011347372539, guid: 70e05aee6eeb499479406ab74c55edbd, type: 3}
+  placeholder: {fileID: 4521561423135697691}
 --- !u!1 &4521561423135697691
 GameObject:
   m_ObjectHideFlags: 0

@@ -194,7 +194,11 @@ def build_biped(shape, arms=True):
         arm_z, reach = shape.widest_z(shape.z(0.3), shape.z(0.75))
     else:
         arm_z, reach = shape.z(0.58), 0.0
-    torso = max(shape.half_width(shape.band(shape.z(0.2), shape.z(0.35))), 0.08 * shape.size.x)
+    # Torso width just below the armpits, ignoring geometry far behind the body (tails), so the shoulder joint
+    # lands where the arm starts instead of partway along it.
+    chest = [v for v in shape.band(arm_z - 0.1 * H, arm_z - 0.04 * H) if abs(v.y - c.y) < 0.25 * shape.size.y]
+    torso = max(shape.half_width(chest) if arms and chest else shape.half_width(shape.band(shape.z(0.2), shape.z(0.35))),
+                0.08 * shape.size.x)
     hip_z = floor + 0.32 * (arm_z - floor) + 0.05 * H
     neck_z = arm_z + 0.06 * H
     # The body column. Without T-pose arms a big tail can make up most of the mesh, so the column is placed
@@ -455,6 +459,28 @@ def bind(body, rig, height):
     return weighted
 
 
+def keep_arms_on_arm_bones(body, rig, height):
+    """Past the shoulder joint, arm vertices follow only the arm bones. Long arms otherwise keep some body weight
+    along their length and bow outward when they are lowered from the T-pose."""
+    bones = rig.data.bones
+    for side, sign in (("L", 1), ("R", -1)):
+        upper = bones.get(f"UpperArm.{side}")
+        lower = bones.get(f"LowerArm.{side}")
+        if upper is None or lower is None:
+            continue
+        start = upper.head_local.x * sign + 0.02 * height
+        arm_z = upper.head_local.z
+        arm_groups = {body.vertex_groups[n].index for n in (upper.name, lower.name) if n in body.vertex_groups}
+        for v in body.data.vertices:
+            if v.co.x * sign < start or abs(v.co.z - arm_z) > 0.12 * height:
+                continue
+            total = sum(g.weight for g in v.groups if g.group in arm_groups)
+            if total <= 0.0:
+                continue
+            for g in v.groups:
+                g.weight = g.weight / total if g.group in arm_groups else 0.0
+
+
 # ---------- animation ----------
 
 def world_rotation(pose_bone, axis, degrees):
@@ -496,6 +522,17 @@ class Keyer:
         pb.rotation_quaternion = q
         pb.keyframe_insert("rotation_quaternion", frame=frame)
 
+    def rest_dir(self, bone):
+        b = self.rig.data.bones[bone]
+        return (b.tail_local - b.head_local).normalized()
+
+    def set_world(self, bone, frame, q_world):
+        """Keys a turn given as a rotation in world axes (as seen in the rest pose)."""
+        pb = self.rig.pose.bones[bone]
+        rest = pb.bone.matrix_local.to_quaternion()
+        pb.rotation_quaternion = rest.inverted() @ q_world @ rest
+        pb.keyframe_insert("rotation_quaternion", frame=frame)
+
     def loc(self, bone, frame, offset):
         """Offset in world axes, as a fraction of the model height."""
         pb = self.rig.pose.bones.get(bone)
@@ -513,15 +550,36 @@ def cycle(length, keys=4):
 
 # biped / upright
 
-ARMS_DOWN = 65  # T-pose arms are lowered to a relaxed pose in every action
+def arm_dir(sign, out, fwd):
+    """Arm direction from angles measured from hanging straight down: `out` raises it sideways (90 = T-pose),
+    `fwd` swings it forward (90 = pointing ahead, negative = behind). Negative `out` crosses the body."""
+    o, w = math.radians(out), math.radians(fwd)
+    return Vector((sign * math.sin(o) * math.cos(w), -math.sin(w), -math.cos(o) * math.cos(w))).normalized()
 
 
-def biped_arms(k, f, swing_l=0.0, swing_r=0.0, extra_r=()):
-    # Left arm points +X: lowering it is a turn around +Y (right arm: -Y). Elbows bend toward the front.
-    k.rot("UpperArm.L", f, (Y, ARMS_DOWN), (X, -swing_l))
-    k.rot("UpperArm.R", f, (Y, -ARMS_DOWN), (X, -swing_r), *extra_r)
-    k.rot("LowerArm.L", f, (Z, -15))
-    k.rot("LowerArm.R", f, (Z, 15))
+def aim_arm(k, f, side, out, fwd, elbow):
+    """Points UpperArm along arm_dir and bends LowerArm by `elbow` degrees toward the front (or up when the arm
+    already points forward). Aiming by direction keeps the arms hanging straight whatever angle the T-pose arms
+    were modeled at."""
+    upper_bone, lower_bone = f"UpperArm.{side}", f"LowerArm.{side}"
+    if upper_bone not in k.rig.pose.bones:
+        return
+    sign = 1 if side == "L" else -1
+    upper = arm_dir(sign, out, fwd)
+    q_upper = k.rest_dir(upper_bone).rotation_difference(upper)
+    k.set_world(upper_bone, f, q_upper)
+    hint = Vector((0, 0, 1)) if abs(upper.y) > 0.7 else Vector((0, -1, 0))
+    axis = upper.cross(hint)
+    if axis.length < 1e-4:
+        axis = Vector((sign, 0, 0)).cross(upper)
+    forearm = Quaternion(axis.normalized(), math.radians(elbow)) @ upper
+    k.set_world(lower_bone, f, k.rest_dir(lower_bone).rotation_difference(q_upper.inverted() @ forearm))
+
+
+def biped_arms(k, f, swing_l=0.0, swing_r=0.0, r_out=None, r_fwd=None, r_elbow=None):
+    # Relaxed arms hang slightly out and forward; swings move them forward (+) / back (-).
+    aim_arm(k, f, "L", 12, 6 + swing_l, 18)
+    aim_arm(k, f, "R", 12 if r_out is None else r_out, 6 + swing_r if r_fwd is None else r_fwd, 18 if r_elbow is None else r_elbow)
 
 
 def tail_sway(k, f, s, amount):
@@ -559,7 +617,8 @@ def animate_biped(k):
         k.rot("Spine", f, (Z, -20 * a), (X, -12 * max(a, 0) + 6 * max(-a, 0)))
         k.rot("Head", f, (Z, 10 * a))
         # Right arm raises back on the wind-up and swipes across the front.
-        biped_arms(k, f, -10 * a, 0, extra_r=((Y, 90 * max(-a, 0)), (Z, 60 * max(a, 0)), (X, -40 * max(a, 0))))
+        wind, strike = max(-a, 0), max(a, 0)
+        biped_arms(k, f, -10 * a, 0, r_out=12 + 50 * wind - 30 * strike, r_fwd=6 + 60 * wind + 70 * strike, r_elbow=18 + 60 * wind)
         k.rot("Thigh.L", f, (X, -15 * max(a, 0)))
         k.rot("Thigh.R", f, (X, 10 * max(a, 0)))
         tail_sway(k, f, a, 20)
@@ -886,6 +945,8 @@ def main():
     shape = Shape(body)
     rig, upright_insect = BUILDERS[body_type](shape)
     weighted = bind(body, rig, shape.H)
+    if body_type == "biped":
+        keep_arms_on_arm_bones(body, rig, shape.H)
     animate(rig, body_type, shape.H, upright_insect)
     print(f"[rig] {body_type} triangles={tris} size={tuple(round(v, 2) for v in shape.size)} weighted={weighted}/{len(body.data.vertices)} bones={[b.name for b in rig.data.bones]}")
     if preview_dir:
@@ -894,4 +955,5 @@ def main():
     print(f"[rig] exported {fbx_path}")
 
 
-main()
+if __name__ == "__main__":
+    main()

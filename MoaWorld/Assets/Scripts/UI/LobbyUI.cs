@@ -12,6 +12,7 @@ namespace MoaWorld
         private const float RefreshInterval = 0.5f;
         private const float RoomButtonHeight = 64f;
         private const float RoomButtonSpacing = 10f;
+        private static readonly string[] TrainerNames = { "남자 트레이너", "여자 트레이너" };
 
         private readonly List<LanDiscovery.RoomInfo> listedRooms = new List<LanDiscovery.RoomInfo>();
 
@@ -20,6 +21,7 @@ namespace MoaWorld
         private TextMeshProUGUI emptyText;
         private Button[] roomButtons;
         private TextMeshProUGUI[] roomLabels;
+        private TextMeshProUGUI[] trainerLabels;
         private float nextRefreshTime;
         private bool ownsMenuState;
 
@@ -120,6 +122,22 @@ namespace MoaWorld
             statusText.text = reason;
         }
 
+        private void SelectTrainer(int index)
+        {
+            PlayerNetwork.PreferredTrainer = index;
+            RefreshTrainerLabels();
+        }
+
+        private void RefreshTrainerLabels()
+        {
+            int selected = PlayerNetwork.PreferredTrainer;
+            for (int i = 0; i < trainerLabels.Length; i++)
+            {
+                trainerLabels[i].text = i == selected ? $"[{TrainerNames[i]}]" : TrainerNames[i];
+                trainerLabels[i].color = i == selected ? new Color(1f, 0.85f, 0.3f) : Color.white;
+            }
+        }
+
         private void Build()
         {
             panel = UiFactory.CreatePanel("LobbyPanel", transform, new Vector2(900f, 720f));
@@ -130,6 +148,16 @@ namespace MoaWorld
 
             UiFactory.CreateButton("HostButton", root, new Vector2(450f, -170f), new Vector2(400f, 70f), 28, OnHostClicked, out TextMeshProUGUI hostLabel);
             hostLabel.text = "방 만들기";
+
+            // Trainer look, kept per PC (PlayerNetwork.PreferredTrainer).
+            trainerLabels = new TextMeshProUGUI[TrainerNames.Length];
+            for (int i = 0; i < TrainerNames.Length; i++)
+            {
+                int index = i;
+                UiFactory.CreateButton($"Trainer{i}", root, new Vector2(i == 0 ? 125f : 775f, -170f), new Vector2(210f, 70f), 22,
+                    () => SelectTrainer(index), out trainerLabels[i]);
+            }
+            RefreshTrainerLabels();
 
             UiFactory.CreateText("RoomsHeader", root, 24, TextAlignmentOptions.Left, new Vector2(0f, 1f), new Vector2(450f, -250f), new Vector2(800f, 36f))
                 .text = "같은 네트워크의 방";

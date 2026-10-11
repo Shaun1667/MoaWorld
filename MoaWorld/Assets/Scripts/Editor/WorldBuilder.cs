@@ -285,12 +285,67 @@ namespace MoaWorld.EditorTools
 
         private static readonly Dictionary<string, List<GameObject>> prefabCache = new Dictionary<string, List<GameObject>>();
         private static System.Random random;
+        private static readonly Dictionary<(Material, Kind), Material> foliageCache = new Dictionary<(Material, Kind), Material>();
+        private const string FoliageShader = "MoaWorld/Stylized Foliage";
+        private const float TreeWind = 0.5f;  // sway grows with height, so tall trees need less
+        private const float DecorWind = 8f;   // grass and flowers are short and sway visibly
+
+        // Swaps the asset pack material for a wind-swaying copy (one per source material and kind).
+        private static void ApplyFoliage(GameObject instance, Kind kind)
+        {
+            foreach (Renderer renderer in instance.GetComponentsInChildren<Renderer>())
+            {
+                Material[] materials = renderer.sharedMaterials;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    if (materials[i] != null)
+                    {
+                        materials[i] = GetFoliageMaterial(materials[i], kind);
+                    }
+                }
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        private static Material GetFoliageMaterial(Material source, Kind kind)
+        {
+            if (foliageCache.TryGetValue((source, kind), out Material cached))
+            {
+                return cached;
+            }
+            EnsureFolder($"{GeneratedRoot}/Materials/Foliage");
+            string path = $"{GeneratedRoot}/Materials/Foliage/{source.name}_{kind}.mat";
+            Shader shader = Shader.Find(FoliageShader);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = shader;
+            if (source.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", source.GetTexture("_BaseMap"));
+                material.SetTextureScale("_BaseMap", source.GetTextureScale("_BaseMap"));
+                material.SetTextureOffset("_BaseMap", source.GetTextureOffset("_BaseMap"));
+            }
+            if (source.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", source.GetColor("_BaseColor"));
+            }
+            material.SetFloat("_Cull", source.HasProperty("_Cull") ? source.GetFloat("_Cull") : 2f);
+            material.SetFloat("_WindStrength", kind == Kind.Tree ? TreeWind : DecorWind);
+            EditorUtility.SetDirty(material);
+            foliageCache[(source, kind)] = material;
+            return material;
+        }
 
         [MenuItem("MoaWorld/Build World")]
         public static void Build()
         {
             random = new System.Random(Seed);
             prefabCache.Clear();
+            foliageCache.Clear();
             EnsureFolder(GeneratedRoot + "/Generated");
             EnsureFolder(GeneratedRoot + "/Materials");
 
@@ -525,7 +580,15 @@ namespace MoaWorld.EditorTools
                 instance.transform.SetPositionAndRotation(ground + Vector3.down * 0.05f, Quaternion.Euler(0f, Range(0f, 360f), 0f));
                 instance.transform.localScale = Vector3.one * scale;
                 SetUpColliders(instance, set.kind, scale);
-                GameObjectUtility.SetStaticEditorFlags(instance, StaticEditorFlags.BatchingStatic);
+                if (set.kind == Kind.Solid)
+                {
+                    GameObjectUtility.SetStaticEditorFlags(instance, StaticEditorFlags.BatchingStatic);
+                }
+                else
+                {
+                    // Not batched: the wind shader needs each plant's own pivot (static batching merges them).
+                    ApplyFoliage(instance, set.kind);
+                }
 
                 if (set.spacing > 0f)
                 {

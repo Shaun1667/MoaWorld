@@ -10,6 +10,8 @@ namespace MoaWorld
         private const float SpeedSmoothing = 10f;
         private const float HitTintSeconds = 0.12f;
         private static readonly int SpeedId = Animator.StringToHash("Speed");
+        private static readonly int AnimSpeedId = Animator.StringToHash("AnimSpeed");
+        private const float MaxStrideSpeedUp = 2f; // walk cycle plays up to this much faster at full speed (less foot sliding)
         private static readonly int AttackId = Animator.StringToHash("Attack");
         private static readonly int HitId = Animator.StringToHash("Hit");
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
@@ -99,6 +101,7 @@ namespace MoaWorld
             if (animator != null)
             {
                 animator.SetFloat(SpeedId, smoothedSpeed);
+                animator.SetFloat(AnimSpeedId, Mathf.Lerp(1f, MaxStrideSpeedUp, smoothedSpeed));
             }
             if (tinted && Time.time >= tintEndTime)
             {

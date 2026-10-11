@@ -478,6 +478,7 @@ namespace MoaWorld.EditorTools
             result.controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
             if (result.controller != null)
             {
+                EnsureAnimSpeed(result.controller);
                 return result;
             }
 
@@ -518,7 +519,26 @@ namespace MoaWorld.EditorTools
             }
 
             result.controller = controller;
+            EnsureAnimSpeed(controller);
             return result;
+        }
+
+        // Locomotion playback speed follows the AnimSpeed parameter (set from movement speed by MoaModel).
+        private static void EnsureAnimSpeed(AnimatorController controller)
+        {
+            if (System.Array.FindIndex(controller.parameters, p => p.name == "AnimSpeed") < 0)
+            {
+                controller.AddParameter(new AnimatorControllerParameter { name = "AnimSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f });
+            }
+            foreach (ChildAnimatorState child in controller.layers[0].stateMachine.states)
+            {
+                if (child.state.name == "Locomotion")
+                {
+                    child.state.speedParameter = "AnimSpeed";
+                    child.state.speedParameterActive = true;
+                }
+            }
+            EditorUtility.SetDirty(controller);
         }
 
         // ---------- helpers ----------

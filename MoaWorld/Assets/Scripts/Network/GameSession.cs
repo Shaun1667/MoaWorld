@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Unity.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -17,6 +18,10 @@ namespace MoaWorld
         private const int MaxPlayerIdLength = 64;
         private const string RoomFullReason = "방이 가득 찼어요";
         private const string InvalidPlayerReason = "접속 정보가 올바르지 않아요";
+        private const string RoomClosingMessage = "MoaWorld.RoomClosing";
+        private const float RoomClosingNoticeSeconds = 0.3f; // time for the notice to reach clients before shutdown
+
+        private bool roomClosedByHost;
 
         private readonly Dictionary<ulong, string> playerIds = new Dictionary<ulong, string>();
 
@@ -63,6 +68,7 @@ namespace MoaWorld
             network.NetworkConfig.ConnectionApproval = true;
             network.ConnectionApprovalCallback = ApproveConnection;
             network.OnClientStopped += OnClientStopped;
+            network.OnClientStarted += OnClientStarted;
             network.OnClientDisconnectCallback += OnClientDisconnected;
             discovery.PlayerCountProvider = () => network.IsServer ? network.ConnectedClientsIds.Count : 0;
         }
@@ -77,6 +83,7 @@ namespace MoaWorld
             if (network != null)
             {
                 network.OnClientStopped -= OnClientStopped;
+                network.OnClientStarted -= OnClientStarted;
                 network.OnClientDisconnectCallback -= OnClientDisconnected;
             }
             if (Instance == this)
@@ -115,11 +122,36 @@ namespace MoaWorld
             return false;
         }
 
-        // Closing a hosted room saves the world (WorldSave listens for the server stopping).
+        // Closing a hosted room saves the world (WorldSave listens for the server stopping). The host first tells
+        // everyone the room is closing, so they can tell it apart from a dropped connection.
         public void Leave()
         {
             leftByChoice = true;
+            if (network.IsServer && network.ConnectedClientsIds.Count > 1)
+            {
+                using (var writer = new FastBufferWriter(1, Allocator.Temp))
+                {
+                    network.CustomMessagingManager.SendNamedMessageToAll(RoomClosingMessage, writer, NetworkDelivery.Reliable);
+                }
+                StartCoroutine(ShutdownSoon());
+                return;
+            }
             network.Shutdown();
+        }
+
+        private System.Collections.IEnumerator ShutdownSoon()
+        {
+            yield return new WaitForSecondsRealtime(RoomClosingNoticeSeconds);
+            network.Shutdown();
+        }
+
+        private void OnClientStarted()
+        {
+            roomClosedByHost = false;
+            if (!network.IsServer)
+            {
+                network.CustomMessagingManager.RegisterNamedMessageHandler(RoomClosingMessage, (sender, reader) => roomClosedByHost = true);
+            }
         }
 
         // Server only.
@@ -191,6 +223,10 @@ namespace MoaWorld
             {
                 reason = "방에서 나왔어요";
             }
+            else if (roomClosedByHost)
+            {
+                reason = "호스트가 방을 닫았어요";
+            }
             // Only our own reasons are shown; Netcode's built-in ones (e.g. host shutting down) are English.
             else if (network.DisconnectReason == RoomFullReason || network.DisconnectReason == InvalidPlayerReason)
             {
@@ -201,6 +237,7 @@ namespace MoaWorld
                 reason = "방에 연결할 수 없거나 연결이 끊어졌어요";
             }
             leftByChoice = false;
+            roomClosedByHost = false;
             SessionEnded?.Invoke(reason);
         }
     }

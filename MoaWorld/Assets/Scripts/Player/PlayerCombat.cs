@@ -144,6 +144,16 @@ namespace MoaWorld
             ActiveMoa.Unit.Damaged += OnOwnSideDamaged;
             ActiveMoa.Unit.Fainted += OnActiveMoaFainted;
             activeInstance = moa;
+            ShowSummonRpc();
+        }
+
+        // Every machine: plays the trainer's summoning gesture.
+        public event System.Action Summoned;
+
+        [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
+        private void ShowSummonRpc()
+        {
+            Summoned?.Invoke();
         }
 
         // Server only.

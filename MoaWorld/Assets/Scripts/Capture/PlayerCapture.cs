@@ -40,6 +40,13 @@ namespace MoaWorld
 
             if (IsOwner && Cursor.lockState == CursorLockMode.Locked && Input.GetMouseButtonDown(0))
             {
+                // Face the aim so the throwing animation matches where the ball goes.
+                Vector3 aim = targeting.AimPoint - transform.position;
+                aim.y = 0f;
+                if (aim.sqrMagnitude > 0.01f)
+                {
+                    transform.rotation = Quaternion.LookRotation(aim);
+                }
                 Vector3 origin = transform.position + Vector3.up * HandHeight + transform.right * HandSideOffset;
                 Vector3 velocity = BallisticVelocity(origin, targeting.AimPoint, GameConfig.Instance.ballThrowSpeed);
                 ThrowRpc(origin, velocity);
@@ -78,6 +85,16 @@ namespace MoaWorld
             ball.NetworkObject.Spawn(true);
             ballsInFlight++;
             ball.Launch(this, velocity);
+            ShowThrowRpc();
+        }
+
+        // Every machine: plays the throwing animation.
+        public event System.Action Thrown;
+
+        [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
+        private void ShowThrowRpc()
+        {
+            Thrown?.Invoke();
         }
 
         // Server only.

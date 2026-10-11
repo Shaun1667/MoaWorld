@@ -10,8 +10,25 @@ namespace MoaWorld
     public class PlayerNetwork : NetworkBehaviour
     {
         private static readonly List<PlayerNetwork> spawned = new List<PlayerNetwork>();
+        private const string TrainerKey = "MoaWorld.Trainer";
 
         [SerializeField] private Behaviour[] ownerOnlyComponents;
+
+        // Trainer look chosen in the lobby (0 = male, 1 = female). Cosmetic, set by the owner.
+        private readonly NetworkVariable<int> trainer = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+        public int Trainer => trainer.Value;
+
+        // Kept per PC.
+        public static int PreferredTrainer
+        {
+            get => PlayerPrefs.GetInt(TrainerKey, 0);
+            set
+            {
+                PlayerPrefs.SetInt(TrainerKey, value);
+                PlayerPrefs.Save();
+            }
+        }
 
         // Server only: players currently in the world.
         public static IReadOnlyList<PlayerNetwork> Spawned => spawned;
@@ -36,6 +53,7 @@ namespace MoaWorld
 
             if (IsOwner)
             {
+                trainer.Value = PreferredTrainer;
                 // Movement is owner-authoritative: placing ourselves at the spawn point makes sure the
                 // server's copy starts there too instead of waiting for our first move.
                 if (MoaBox.Instance != null)
