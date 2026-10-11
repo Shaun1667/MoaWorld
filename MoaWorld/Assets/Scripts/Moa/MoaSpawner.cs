@@ -10,6 +10,7 @@ namespace MoaWorld
     {
         private const float RaycastHeight = 100f;
         private const int MaxPlacementAttempts = 10;
+        private const float MinGroundNormalY = 0.7f; // steeper than ~45 degrees (cliff faces) is not a spawn point
 
         public enum SpawnTime
         {
@@ -29,6 +30,8 @@ namespace MoaWorld
         [SerializeField] private WildMoa wildMoaPrefab;
         [SerializeField] private SpawnEntry[] entries;
         [SerializeField] private float radius = 25f;
+        [Tooltip("Spawn points higher or lower than the spawner by more than this are skipped (keeps moa off cliff tops).")]
+        [SerializeField] private float maxHeightOffset = 8f;
         [SerializeField] private int maxAlive = 10;
         [SerializeField] private int minLevel = 1;
         [SerializeField] private int maxLevel = 5;
@@ -151,6 +154,9 @@ namespace MoaWorld
                 Vector2 offset = UnityEngine.Random.insideUnitCircle * radius;
                 Vector3 origin = transform.position + new Vector3(offset.x, RaycastHeight, offset.y);
                 if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, RaycastHeight * 2f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)
+                    && hit.normal.y >= MinGroundNormalY
+                    && Mathf.Abs(hit.point.y - transform.position.y) <= maxHeightOffset
+                    && hit.collider.GetComponentInParent<WorldProp>() == null
                     && hit.collider.GetComponentInParent<WildMoa>() == null
                     && hit.collider.GetComponentInParent<CharacterController>() == null
                     && hit.collider.GetComponentInParent<MoaBox>() == null
