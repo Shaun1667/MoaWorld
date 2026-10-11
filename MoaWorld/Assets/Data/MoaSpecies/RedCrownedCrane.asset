@@ -25,4 +25,10 @@ MonoBehaviour:
   skillPower: 10
   skillCooldown: 2
   skillRange: 2
+  castEffect: {fileID: 2060900179291159282, guid: ca6705a3f9070d14d819d179493bcfa0, type: 3}
+  castEffectScale: 0.4
+  castEffectEuler: {x: 0, y: 0, z: 0}
+  castEffectOffset: 0.6
+  hitEffect: {fileID: 4924508274929071776, guid: 0edef91621bb6b34384ccc9dbb98729c, type: 3}
+  hitEffectScale: 0.8
   aggressive: 0

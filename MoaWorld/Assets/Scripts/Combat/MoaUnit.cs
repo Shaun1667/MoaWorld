@@ -242,7 +242,7 @@ namespace MoaWorld
         {
             if (Moa != null)
             {
-                SkillEffect.Spawn(origin, impact, GameConfig.Instance.GetElementColor(Moa.Species.element));
+                SkillEffect.Play(Moa.Species, origin, impact, GameConfig.Instance.GetElementColor(Moa.Species.element));
             }
             SkillShown?.Invoke();
         }
