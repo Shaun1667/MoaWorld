@@ -52,6 +52,10 @@ namespace MoaWorld
             {
                 verticalVelocity = GroundedStickVelocity;
             }
+            if (controller.isGrounded && !UiState.IsMenuOpen && Input.GetKeyDown(KeyCode.Space))
+            {
+                verticalVelocity = Mathf.Sqrt(2f * -Physics.gravity.y * config.playerJumpHeight);
+            }
             verticalVelocity += Physics.gravity.y * Time.deltaTime;
             move.y = verticalVelocity;
 

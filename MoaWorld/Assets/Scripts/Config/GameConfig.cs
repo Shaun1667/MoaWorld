@@ -33,6 +33,7 @@ namespace MoaWorld
         [Header("Player Movement")]
         public float playerMoveSpeed = 6f;
         public float playerTurnSpeed = 720f;     // degrees per second
+        public float playerJumpHeight = 1.2f;    // meters (Space)
 
         [Header("Camera")]
         public float cameraDistance = 8f;
@@ -114,10 +115,12 @@ namespace MoaWorld
         public float wildRespawnSeconds = 60f;    // TBD: time before a defeated wild moa reappears
         public int wildCoinDropMin = 5;           // TBD
         public int wildCoinDropMax = 15;          // TBD
+        public int captureCoinMin = 5;            // TBD: coins given straight to the capturer on a successful capture
+        public int captureCoinMax = 15;           // TBD
 
         [Header("Economy (confirmed values)")]
         public int coinDespawnMinutes = 15;
-        public float moaBoxHealMinutes = 10f;
+        public float moaBoxHealMinutes = 1f;      // shortened from the design doc's 10 minutes at the user's request
         public float moaBoxInteractRange = 3f;
         public float shopInteractRange = 3f;
         public float coinPickupRadius = 1.5f;

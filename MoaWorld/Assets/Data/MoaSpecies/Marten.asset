@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.MoaSpecies
   speciesId: Marten
   displayName: "\uB2F4\uBE44"
-  element: 0
+  element: 3
   modelPrefab: {fileID: 9167853534451650118, guid: 98bf3dd3812929747830d32ad1b7b326, type: 3}
   baseHp: 50
   baseAttack: 10

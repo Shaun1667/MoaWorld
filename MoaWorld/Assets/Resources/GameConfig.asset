@@ -52,7 +52,7 @@ MonoBehaviour:
   wildCoinDropMin: 5
   wildCoinDropMax: 15
   coinDespawnMinutes: 15
-  moaBoxHealMinutes: 10
+  moaBoxHealMinutes: 1
   maxPartySize: 6
   storagePageSize: 30
   storagePageCount: 30

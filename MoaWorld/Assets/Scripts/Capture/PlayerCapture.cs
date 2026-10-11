@@ -84,14 +84,18 @@ namespace MoaWorld
         public void OnCaptureSucceeded(MoaInstance moa)
         {
             inventory.MarkCaptured();
+            GameConfig config = GameConfig.Instance;
+            int coins = Random.Range(config.captureCoinMin, config.captureCoinMax + 1);
+            inventory.AddCoins(coins);
+
             string label = $"{moa.Species.displayName} Lv.{moa.level}";
             if (party.TryAdd(moa))
             {
-                Notify($"{label} 포획 성공!");
+                Notify($"{label} 포획 성공! 모아 코인 +{coins}");
             }
             else if (box.TryAdd(moa))
             {
-                Notify($"{label} 포획 성공! 파티가 가득 차서 모아 박스로 보냈어요");
+                Notify($"{label} 포획 성공! 모아 코인 +{coins} · 파티가 가득 차서 모아 박스로 보냈어요");
             }
         }
 

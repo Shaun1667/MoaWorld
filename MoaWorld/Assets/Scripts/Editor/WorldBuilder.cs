@@ -143,7 +143,7 @@ namespace MoaWorld.EditorTools
                     },
                     spawners = new[]
                     {
-                        new SpawnerSpec(-57.7f, 40f, 25f, 6),
+                        new SpawnerSpec(-57.7f, 35f, 22f, 6),
                         new SpawnerSpec(-118f, -5f, 25f, 6),
                     },
                     minLevel = 1,
@@ -153,9 +153,9 @@ namespace MoaWorld.EditorTools
                 new Biome
                 {
                     name = "Forest", // north
-                    center = new Vector2(-57.7f, 185f),
-                    radius = 115f,
-                    patches = new[] { new Patch("ForestFloor", 125f, 0.04f, new Color(0.36f, 0.56f, 0.27f)) },
+                    center = new Vector2(-40f, 125f),
+                    radius = 90f,
+                    patches = new[] { new Patch("ForestFloor", 98f, 0.04f, new Color(0.36f, 0.56f, 0.27f)) },
                     props = new[]
                     {
                         new PropSet(Embers + "Trees/Oak", ".", 55, 0.3f, 0.42f, Kind.Tree, 7f),
@@ -180,9 +180,9 @@ namespace MoaWorld.EditorTools
                     },
                     spawners = new[]
                     {
-                        new SpawnerSpec(-57.7f, 150f, 35f, 7),
-                        new SpawnerSpec(-125f, 225f, 30f, 6),
-                        new SpawnerSpec(10f, 230f, 30f, 6),
+                        new SpawnerSpec(-40f, 105f, 30f, 7),
+                        new SpawnerSpec(-95f, 160f, 25f, 6),
+                        new SpawnerSpec(15f, 165f, 25f, 6),
                     },
                     minLevel = 3,
                     maxLevel = 10,
@@ -191,12 +191,12 @@ namespace MoaWorld.EditorTools
                 new Biome
                 {
                     name = "Lakeside", // west: shallow lake (walkable, no swimming) with sandy shore
-                    center = new Vector2(-330f, 80f),
-                    radius = 105f,
+                    center = new Vector2(-215f, 90f),
+                    radius = 85f,
                     patches = new[]
                     {
-                        new Patch("LakeShore", 62f, 0.06f, new Color(0.88f, 0.82f, 0.6f)),
-                        new Patch("LakeWater", 50f, 0.16f, new Color(0.25f, 0.55f, 0.82f, 0.72f), water: true),
+                        new Patch("LakeShore", 52f, 0.06f, new Color(0.88f, 0.82f, 0.6f)),
+                        new Patch("LakeWater", 42f, 0.16f, new Color(0.25f, 0.55f, 0.82f, 0.72f), water: true),
                     },
                     props = new[]
                     {
@@ -215,9 +215,9 @@ namespace MoaWorld.EditorTools
                     },
                     spawners = new[]
                     {
-                        new SpawnerSpec(-330f, 80f, 38f, 8),
-                        new SpawnerSpec(-395f, 150f, 25f, 5),
-                        new SpawnerSpec(-268f, 15f, 25f, 5),
+                        new SpawnerSpec(-215f, 90f, 32f, 8),
+                        new SpawnerSpec(-265f, 135f, 22f, 5),
+                        new SpawnerSpec(-165f, 55f, 22f, 5),
                     },
                     minLevel = 5,
                     maxLevel = 12,
@@ -226,9 +226,9 @@ namespace MoaWorld.EditorTools
                 new Biome
                 {
                     name = "Badlands", // east: dry sand, cacti and dead trees
-                    center = new Vector2(232f, 110f),
-                    radius = 115f,
-                    patches = new[] { new Patch("BadlandsSand", 125f, 0.05f, new Color(0.86f, 0.74f, 0.5f)) },
+                    center = new Vector2(135f, 100f),
+                    radius = 90f,
+                    patches = new[] { new Patch("BadlandsSand", 98f, 0.05f, new Color(0.86f, 0.74f, 0.5f)) },
                     props = new[]
                     {
                         new PropSet(Moose, "^Cactus [1-3] (G1|G2|O1)$", 90, 1f, 1.4f, Kind.Tree, 4f),
@@ -243,9 +243,9 @@ namespace MoaWorld.EditorTools
                     },
                     spawners = new[]
                     {
-                        new SpawnerSpec(232f, 110f, 35f, 7),
-                        new SpawnerSpec(295f, 175f, 25f, 6),
-                        new SpawnerSpec(180f, 55f, 25f, 6),
+                        new SpawnerSpec(135f, 100f, 30f, 7),
+                        new SpawnerSpec(180f, 150f, 22f, 6),
+                        new SpawnerSpec(95f, 60f, 22f, 6),
                     },
                     minLevel = 8,
                     maxLevel = 16,
