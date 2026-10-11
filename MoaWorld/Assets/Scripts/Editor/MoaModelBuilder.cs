@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -16,6 +17,7 @@ namespace MoaWorld.EditorTools
         private const string PrefabRoot = "Assets/Prefabs/MoaModels";
         private const string SpeciesRoot = "Assets/Data/MoaSpecies";
         private const string BodyPath = "Hover/Body";
+        private const string RiggedSuffix = "_Rigged.fbx"; // skeleton + clips made by Tools/Blender/rig_moa.py
 
         private enum Style
         {
@@ -106,6 +108,13 @@ namespace MoaWorld.EditorTools
 
             string clipFolder = $"{AnimationRoot}/{entry.speciesId}";
             EnsureFolder(clipFolder);
+
+            string riggedPath = $"{ModelRoot}/{entry.folder}/{entry.folder}{RiggedSuffix}";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(riggedPath) != null)
+            {
+                BuildRigged(entry, species, riggedPath, clipFolder, baseController);
+                return true;
+            }
             AnimationClip idle = SaveClip($"{clipFolder}/{entry.speciesId}_Idle.anim", true, clip => BuildIdle(clip, entry));
             AnimationClip move = SaveClip($"{clipFolder}/{entry.speciesId}_Move.anim", true, clip => BuildMove(clip, entry));
             AnimationClip attack = SaveClip($"{clipFolder}/{entry.speciesId}_Attack.anim", false, clip => BuildAttack(clip, entry));
@@ -149,6 +158,83 @@ namespace MoaWorld.EditorTools
             species.modelPrefab = prefab;
             EditorUtility.SetDirty(species);
             return true;
+        }
+
+        // ---------- rigged models (Tools/Blender/rig_moa.py) ----------
+
+        // The rigged FBX carries its own skeleton clips (Idle, Walk, Attack, Hit), so the Animator sits on the
+        // model itself and the whole-body clips are not used.
+        private static void BuildRigged(Entry entry, MoaSpecies species, string riggedPath, string clipFolder, BaseController baseController)
+        {
+            ConfigureRiggedClips(riggedPath);
+            var clips = new Dictionary<string, AnimationClip>();
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(riggedPath))
+            {
+                if (asset is AnimationClip clip && !clip.name.StartsWith("__preview"))
+                {
+                    clips[clip.name] = clip;
+                }
+            }
+
+            string overridePath = $"{clipFolder}/{entry.speciesId}.overrideController";
+            var overrides = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(overridePath);
+            if (overrides == null)
+            {
+                overrides = new AnimatorOverrideController(baseController.controller);
+                AssetDatabase.CreateAsset(overrides, overridePath);
+            }
+            overrides.runtimeAnimatorController = baseController.controller;
+            overrides[baseController.idle] = clips["Idle"];
+            overrides[baseController.move] = clips["Walk"];
+            overrides[baseController.attack] = clips["Attack"];
+            overrides[baseController.hit] = clips["Hit"];
+            EditorUtility.SetDirty(overrides);
+
+            // Root > Hover (fixed height) > Mesh (scaled rigged model with the Animator).
+            var root = new GameObject($"{entry.speciesId}_Model");
+            var hover = new GameObject("Hover").transform;
+            hover.SetParent(root.transform, false);
+            hover.localPosition = Vector3.up * entry.hover;
+            var mesh = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(riggedPath));
+            mesh.name = "Mesh";
+            mesh.transform.SetParent(hover, false);
+            var skin = mesh.GetComponentInChildren<SkinnedMeshRenderer>();
+            Vector3 meshSize = skin.sharedMesh.bounds.size;
+            float longest = Mathf.Max(meshSize.x, Mathf.Max(meshSize.y, meshSize.z));
+            mesh.transform.localScale = Vector3.one * (entry.size / longest);
+            skin.updateWhenOffscreen = false;
+
+            var animator = mesh.GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = mesh.AddComponent<Animator>();
+            }
+            animator.runtimeAnimatorController = overrides;
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+
+            string prefabPath = $"{PrefabRoot}/{entry.speciesId}_Model.prefab";
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Object.DestroyImmediate(root);
+
+            species.modelPrefab = prefab;
+            EditorUtility.SetDirty(species);
+        }
+
+        // Blender exports takes as "Armature|Idle"; they are renamed to the plain action names and looped as needed.
+        private static void ConfigureRiggedClips(string path)
+        {
+            var importer = (ModelImporter)AssetImporter.GetAtPath(path);
+            importer.animationType = ModelImporterAnimationType.Generic;
+            ModelImporterClipAnimation[] takes = importer.defaultClipAnimations;
+            foreach (ModelImporterClipAnimation take in takes)
+            {
+                int bar = take.takeName.LastIndexOf('|');
+                take.name = bar >= 0 ? take.takeName.Substring(bar + 1) : take.takeName;
+                take.loopTime = take.name == "Idle" || take.name == "Walk";
+            }
+            importer.clipAnimations = takes;
+            importer.SaveAndReimport();
         }
 
         // ---------- clips ----------
