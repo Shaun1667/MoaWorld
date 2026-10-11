@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Badger
   displayName: "\uC624\uC18C\uB9AC"
   element: 2
+  modelPrefab: {fileID: 1300815127050285679, guid: dcd0c3065f5581c4db226e3095f82d52, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

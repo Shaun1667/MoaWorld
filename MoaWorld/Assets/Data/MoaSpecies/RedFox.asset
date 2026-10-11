@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: RedFox
   displayName: "\uBD89\uC740\uC5EC\uC6B0"
   element: 2
+  modelPrefab: {fileID: 8626183103968053917, guid: 34099f527b72761449f6f97b38c6ef5a, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

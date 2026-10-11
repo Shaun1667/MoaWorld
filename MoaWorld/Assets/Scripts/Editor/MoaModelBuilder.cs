@@ -24,6 +24,7 @@ namespace MoaWorld.EditorTools
             Waddler, // birds walking: side-to-side rock and pecking attack
             Flyer,   // hovers above the ground
             Slither, // snake: side sway and strike
+            Biped,   // stands on two legs (T-pose models): stepping rock and swipe attack
         }
 
         private class Entry
@@ -62,6 +63,15 @@ namespace MoaWorld.EditorTools
             new Entry("EagleOwl", "Owl", Style.Waddler, 1.2f, 0.85f, 1.1f),
             new Entry("Tiger", "Tiger", Style.Walker, 1.5f, 0.9f, 1.2f),
             new Entry("WildBoar", "Wildboar", Style.Walker, 1.4f, 1.25f, 1.1f),
+            new Entry("Rabbit", "Rabbit", Style.Biped, 0.9f, 1.3f, 0.9f),
+            new Entry("LeopardCat", "Leopardcat", Style.Biped, 1.0f, 1.2f, 1.0f),
+            new Entry("Badger", "Badger", Style.Biped, 1.1f, 1.0f, 1.0f),
+            new Entry("Chipmunk", "Chipmunk", Style.Biped, 0.8f, 1.4f, 0.9f),
+            new Entry("RedFox", "Redfox", Style.Biped, 1.1f, 1.15f, 1.0f),
+            new Entry("Otter", "Otter", Style.Biped, 1.1f, 1.0f, 1.1f),
+            new Entry("Hedgehog", "Hedgehog", Style.Biped, 0.8f, 1.2f, 0.8f),
+            new Entry("AsiaticBlackBear", "Bear", Style.Biped, 1.5f, 0.75f, 1.2f),
+            new Entry("Marten", "Dambi", Style.Biped, 1.0f, 1.2f, 1.0f),
         };
 
         [MenuItem("MoaWorld/Build Moa Models")]
@@ -162,6 +172,10 @@ namespace MoaWorld.EditorTools
             {
                 Key(clip, "localEulerAnglesRaw.y", 0, 0f, period / 4, 5f * a, period * 3 / 4, -5f * a, period, 0f);
             }
+            else if (e.style == Style.Biped)
+            {
+                Key(clip, "localEulerAnglesRaw.z", 0, 0f, period / 4, 2f * a, period * 3 / 4, -2f * a, period, 0f);
+            }
         }
 
         private static void BuildMove(AnimationClip clip, Entry e)
@@ -211,6 +225,16 @@ namespace MoaWorld.EditorTools
                     Key(clip, "m_LocalScale.z", 0, 1f, p / 2, 1.06f, p, 1f);
                     break;
                 }
+                case Style.Biped:
+                {
+                    // One cycle is two steps: rock onto each foot, bounce at every step, lean slightly forward.
+                    float p = 0.6f / e.tempo;
+                    Key(clip, "localEulerAnglesRaw.z", 0, 0f, p / 4, 6f * a, p / 2, 0f, p * 3 / 4, -6f * a, p, 0f);
+                    Key(clip, "localEulerAnglesRaw.y", 0, 0f, p / 4, 5f * a, p * 3 / 4, -5f * a, p, 0f);
+                    Key(clip, "m_LocalPosition.y", 0, 0f, p / 4, 0.06f * a, p / 2, 0f, p * 3 / 4, 0.06f * a, p, 0f);
+                    Key(clip, "localEulerAnglesRaw.x", 0, 5f, p, 5f);
+                    break;
+                }
             }
         }
 
@@ -237,6 +261,11 @@ namespace MoaWorld.EditorTools
                     Key(clip, "m_LocalPosition.y", 0, 0f, 0.27f, 0.35f * a, 0.5f, 0f);
                     Key(clip, "m_LocalPosition.z", 0, 0f, 0.15f, -0.1f, 0.3f, 0.45f, 0.5f, 0f);
                     Key(clip, "m_LocalScale.y", 0, 1f, 0.12f, 0.85f, 0.27f, 1.1f, 0.5f, 1f);
+                    break;
+                case Style.Biped: // wind up with a twist, then swipe forward
+                    Key(clip, "localEulerAnglesRaw.y", 0, 0f, 0.15f, -20f * a, 0.27f, 25f * a, 0.5f, 0f);
+                    Key(clip, "localEulerAnglesRaw.x", 0, 0f, 0.15f, -8f, 0.27f, 15f * a, 0.5f, 0f);
+                    Key(clip, "m_LocalPosition.z", 0, 0f, 0.15f, -0.08f, 0.27f, 0.35f * a, 0.5f, 0f);
                     break;
                 default: // lunge
                     Key(clip, "m_LocalPosition.z", 0, 0f, 0.15f, -0.12f, 0.27f, 0.45f * a, 0.5f, 0f);

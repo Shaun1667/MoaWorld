@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Chipmunk
   displayName: "\uB2E4\uB78C\uC950"
   element: 0
+  modelPrefab: {fileID: 6677749974487878446, guid: 803514be493877141bc9ca5342c1a68a, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

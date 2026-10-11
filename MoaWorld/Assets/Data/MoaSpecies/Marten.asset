@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Marten
   displayName: "\uB2F4\uBE44"
   element: 0
+  modelPrefab: {fileID: 9167853534451650118, guid: 98bf3dd3812929747830d32ad1b7b326, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

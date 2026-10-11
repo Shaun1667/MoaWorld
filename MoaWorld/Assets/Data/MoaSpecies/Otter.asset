@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Otter
   displayName: "\uC218\uB2EC"
   element: 1
+  modelPrefab: {fileID: 8624990024569424561, guid: cb418777b05c8ee48ac79795d59a957a, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

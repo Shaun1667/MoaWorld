@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Rabbit
   displayName: "\uD1A0\uB07C"
   element: 3
+  modelPrefab: {fileID: 1414621755073725319, guid: 5185b1b98e8676b4588ec979beec89f4, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

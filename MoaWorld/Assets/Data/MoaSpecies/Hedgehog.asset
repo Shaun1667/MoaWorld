@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: Hedgehog
   displayName: "\uACE0\uC2B4\uB3C4\uCE58"
   element: 0
+  modelPrefab: {fileID: 1114835223335144423, guid: 5aae6f388a360f64595023ab97a2633c, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0

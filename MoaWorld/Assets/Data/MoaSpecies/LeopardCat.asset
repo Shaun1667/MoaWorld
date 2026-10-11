@@ -15,10 +15,14 @@ MonoBehaviour:
   speciesId: LeopardCat
   displayName: "\uC0B5"
   element: 2
+  modelPrefab: {fileID: 7651371780839554939, guid: 4fe46c85d931f73409ea15ac4096457a, type: 3}
   baseHp: 50
   baseAttack: 10
   baseDefense: 10
   hpGrowth: 5
   attackGrowth: 1
   defenseGrowth: 1
+  skillPower: 10
+  skillCooldown: 2
+  skillRange: 2
   aggressive: 0
