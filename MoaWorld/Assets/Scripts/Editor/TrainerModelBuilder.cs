@@ -59,6 +59,23 @@ namespace MoaWorld.EditorTools
             }
             AssignToPlayer(prefabs.ToArray());
             AssetDatabase.SaveAssets();
+
+            // The controller is recreated each run, so prefabs are reloaded from disk and checked: an editor-side
+            // stale reference once left a saved prefab without its controller.
+            foreach (GameObject prefab in prefabs)
+            {
+                if (prefab == null)
+                {
+                    continue;
+                }
+                string path = AssetDatabase.GetAssetPath(prefab);
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                var animator = AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponentInChildren<Animator>();
+                if (animator.runtimeAnimatorController == null)
+                {
+                    Debug.LogError($"[TrainerModelBuilder] {path} lost its Animator controller; run Build Trainer Models again.");
+                }
+            }
             Debug.Log($"[TrainerModelBuilder] Built {prefabs.FindAll(p => p != null).Count}/{Trainers.Length} trainers.");
         }
 
