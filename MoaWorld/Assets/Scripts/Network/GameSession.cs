@@ -19,9 +19,13 @@ namespace MoaWorld
         private const string RoomFullReason = "방이 가득 찼어요";
         private const string InvalidPlayerReason = "접속 정보가 올바르지 않아요";
         private const string RoomClosingMessage = "MoaWorld.RoomClosing";
+        private const int JoinAttemptMilliseconds = 1000;
+        private const string JoinFailedReason = "방에 접속하지 못했어요. 호스트 PC의 Windows 방화벽에서 이 게임(UDP 7777)이 개인 네트워크로 허용됐는지 확인해 주세요";
+        private const string ConnectionLostReason = "방과의 연결이 끊어졌어요";
         private const float RoomClosingNoticeSeconds = 0.3f; // time for the notice to reach clients before shutdown
 
         private bool roomClosedByHost;
+        private bool joinedRoom; // false until the host accepted us, so a failed join can be told apart from a drop
 
         private readonly Dictionary<ulong, string> playerIds = new Dictionary<ulong, string>();
 
@@ -35,6 +39,7 @@ namespace MoaWorld
 
         public LanDiscovery Discovery => discovery;
         public bool IsInSession => network != null && network.IsListening;
+        public bool IsJoining => IsInSession && !network.IsServer && !joinedRoom;
 
         // Korean reason shown in the lobby when a session ends.
         public event Action<string> SessionEnded;
@@ -70,6 +75,7 @@ namespace MoaWorld
             network.OnClientStopped += OnClientStopped;
             network.OnClientStarted += OnClientStarted;
             network.OnClientDisconnectCallback += OnClientDisconnected;
+            network.OnClientConnectedCallback += OnClientConnected;
             discovery.PlayerCountProvider = () => network.IsServer ? network.ConnectedClientsIds.Count : 0;
         }
 
@@ -85,6 +91,7 @@ namespace MoaWorld
                 network.OnClientStopped -= OnClientStopped;
                 network.OnClientStarted -= OnClientStarted;
                 network.OnClientDisconnectCallback -= OnClientDisconnected;
+                network.OnClientConnectedCallback -= OnClientConnected;
             }
             if (Instance == this)
             {
@@ -111,7 +118,10 @@ namespace MoaWorld
 
         public bool Join(LanDiscovery.RoomInfo room)
         {
+            joinedRoom = false;
             transport.SetConnectionData(room.address, room.port);
+            transport.ConnectTimeoutMS = JoinAttemptMilliseconds;
+            transport.MaxConnectAttempts = Mathf.Max(1, GameConfig.Instance.joinTimeoutSeconds * 1000 / JoinAttemptMilliseconds);
             network.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(LocalPlayerId);
             discovery.StopListening();
             if (network.StartClient())
@@ -200,6 +210,14 @@ namespace MoaWorld
             return candidate;
         }
 
+        private void OnClientConnected(ulong clientId)
+        {
+            if (clientId == network.LocalClientId)
+            {
+                joinedRoom = true;
+            }
+        }
+
         private void OnClientDisconnected(ulong clientId)
         {
             if (network.IsServer)
@@ -234,10 +252,12 @@ namespace MoaWorld
             }
             else
             {
-                reason = "방에 연결할 수 없거나 연결이 끊어졌어요";
+                // Never accepted: the host did not answer at all, which on a LAN is almost always its firewall.
+                reason = joinedRoom ? ConnectionLostReason : JoinFailedReason;
             }
             leftByChoice = false;
             roomClosedByHost = false;
+            joinedRoom = false;
             SessionEnded?.Invoke(reason);
         }
     }

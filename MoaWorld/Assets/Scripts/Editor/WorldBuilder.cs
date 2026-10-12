@@ -643,7 +643,8 @@ namespace MoaWorld.EditorTools
                 return false;
             }
             if (hit.normal.y < MinGroundNormalY || hit.collider.GetComponentInParent<WorldProp>() != null
-                || hit.collider.GetComponentInParent<MoaBox>() != null || hit.collider.GetComponentInParent<Shop>() != null)
+                || hit.collider.GetComponentInParent<MoaBox>() != null || hit.collider.GetComponentInParent<Shop>() != null
+                || hit.collider.GetComponentInParent<MoaHealer>() != null)
             {
                 return false;
             }

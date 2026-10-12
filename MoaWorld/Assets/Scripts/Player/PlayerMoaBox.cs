@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace MoaWorld
 {
-    // Personal Moa Box storage. A moa fully heals once it has been stored for the configured time.
-    // The server owns the list and sends the owning client small add/remove/update messages,
+    // Personal Moa Box storage. A moa is fully healed the moment it is stored.
+    // The server owns the list and sends the owning client small add/remove messages,
     // since a full box (900 moa) is too large to resend on every change.
     [RequireComponent(typeof(PlayerParty), typeof(PlayerCombat), typeof(PlayerNotifications))]
     public class PlayerMoaBox : NetworkBehaviour
@@ -17,7 +17,6 @@ namespace MoaWorld
         public class StoredMoa
         {
             public MoaInstance moa;
-            public double storedAt; // world time in seconds
         }
 
         [Serializable]
@@ -38,9 +37,6 @@ namespace MoaWorld
         public bool IsFull => stored.Count >= Capacity;
         public bool IsNearBox => MoaBox.Instance != null && MoaBox.Instance.IsInRange(transform.position);
 
-        private static double Now => WorldClock.Instance != null ? WorldClock.Instance.WorldTime : Time.timeAsDouble;
-        private static double HealSeconds => GameConfig.Instance.moaBoxHealMinutes * 60.0;
-
         public event Action Changed;
 
         private void Awake()
@@ -48,34 +44,6 @@ namespace MoaWorld
             party = GetComponent<PlayerParty>();
             combat = GetComponent<PlayerCombat>();
             notifications = GetComponent<PlayerNotifications>();
-        }
-
-        private void Update()
-        {
-            if (!IsServer)
-            {
-                return;
-            }
-            bool healedAny = false;
-            for (int i = 0; i < stored.Count; i++)
-            {
-                StoredMoa entry = stored[i];
-                if (entry.moa.currentHp < entry.moa.MaxHp && HealRemainingSeconds(entry) <= 0f)
-                {
-                    entry.moa.currentHp = entry.moa.MaxHp;
-                    healedAny = true;
-                    SendToOwner(() => UpdatedRpc(i, JsonUtility.ToJson(entry)));
-                }
-            }
-            if (healedAny)
-            {
-                Changed?.Invoke();
-            }
-        }
-
-        public float HealRemainingSeconds(StoredMoa entry)
-        {
-            return Mathf.Max(0f, (float)(HealSeconds - (Now - entry.storedAt)));
         }
 
         // Client requests. The server re-checks everything.
@@ -136,7 +104,8 @@ namespace MoaWorld
             {
                 return false;
             }
-            var entry = new StoredMoa { moa = moa, storedAt = Now };
+            moa.currentHp = moa.MaxHp;
+            var entry = new StoredMoa { moa = moa };
             stored.Add(entry);
             SendToOwner(() => AddedRpc(JsonUtility.ToJson(entry)));
             Changed?.Invoke();
@@ -199,16 +168,6 @@ namespace MoaWorld
             }
         }
 
-        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
-        private void UpdatedRpc(int index, string json)
-        {
-            if (index >= 0 && index < stored.Count)
-            {
-                stored[index] = JsonUtility.FromJson<StoredMoa>(json);
-                Changed?.Invoke();
-            }
-        }
-
         public void WriteSave(PlayerSaveData data)
         {
             data.box = new List<StoredMoa>(stored);
@@ -223,6 +182,8 @@ namespace MoaWorld
                 {
                     if (stored.Count < Capacity && entry?.moa != null && entry.moa.Species != null)
                     {
+                        // Older saves could hold moa that were still waiting to heal.
+                        entry.moa.currentHp = entry.moa.MaxHp;
                         stored.Add(entry);
                     }
                 }

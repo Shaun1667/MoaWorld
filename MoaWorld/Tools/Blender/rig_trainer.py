@@ -25,6 +25,8 @@ from rig_moa import X, Y, Z, centroid, percentile, select_only  # noqa: E402
 TARGET_TRIANGLES = 1000000
 FINGERS = ("Index", "Middle", "Ring", "Pinky")
 SIDES = (("L", 1), ("R", -1))
+# Relative finger widths (index .. pinky) used to cut a fused finger slab into four strips.
+FUSED_FINGER_WIDTHS = (1.0, 1.05, 1.0, 0.85)
 
 
 # ---------- measuring ----------
@@ -168,6 +170,12 @@ class Body:
         pieces.sort(key=lambda p: max(abs(self.verts[i].x - self.cx) for i in p), reverse=True)
         finger_pieces = sorted(pieces[:4], key=lambda p: centroid([self.verts[i] for i in p]).y)
         fingers, owner = {}, {}
+        fused = None if len(finger_pieces) == 4 else self._split_fused(hand_idx, wrist_x, knuckle_x, tip_x, hand_len)
+        if fused is not None:
+            fingers, owner, root, thumb_tip = fused
+            print(f"[rig] hand {sign:+d}: fused fingers, separate thumb, owned verts={len(owner)}")
+            return {"wrist_x": wrist_x, "knuckle_x": knuckle_x, "tip_x": tip_x, "fingers": fingers,
+                    "thumb_root": root, "thumb_tip": thumb_tip, "hand_len": hand_len, "owner": owner}
         if len(finger_pieces) == 4:
             for name, piece in zip(FINGERS, finger_pieces):
                 pts = [self.verts[i] for i in piece]
@@ -217,6 +225,69 @@ class Body:
                 owner[i] = "Thumb"
         return {"wrist_x": wrist_x, "knuckle_x": knuckle_x, "tip_x": tip_x, "fingers": fingers,
                 "thumb_root": root, "thumb_tip": thumb_tip, "hand_len": hand_len, "owner": owner}
+
+    def _split_fused(self, hand_idx, wrist_x, knuckle_x, tip_x, hand_len):
+        """For hands whose four fingers are one fused slab of mesh (only shallow grooves between them) and whose
+        thumb is a separate tube. Returns (fingers, owner, thumb_root, thumb_tip) or None if the hand is not
+        shaped like that."""
+        span = tip_x - knuckle_x
+
+        def reach(piece):
+            return max(abs(self.verts[i].x - self.cx) for i in piece)
+
+        # Cut the finger section at increasing distances until it falls apart into exactly two pieces:
+        # the shorter one is the thumb, the other is the finger slab.
+        thumb_piece = slab_piece = None
+        for f in (0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6):
+            cut = knuckle_x + f * span
+            pieces = [p for p in self.components([i for i in hand_idx if abs(self.verts[i].x - self.cx) > cut]) if len(p) >= 10]
+            if len(pieces) == 2:
+                thumb_piece, slab_piece = sorted(pieces, key=reach)
+                break
+        if thumb_piece is None or reach(thumb_piece) > knuckle_x + 0.9 * span:
+            return None
+
+        # Grow both back toward the wrist together, so the thumb takes its side of the palm.
+        grown = self.grow_together({"Thumb": thumb_piece, "Slab": slab_piece}, hand_idx, wrist_x + 0.05 * hand_len)
+        slab = [i for i, n in grown.items() if n == "Slab"]
+        mid = [self.verts[i] for i in slab if knuckle_x + 0.3 * span <= abs(self.verts[i].x - self.cx) <= knuckle_x + 0.7 * span]
+        thumb = [self.verts[i] for i, n in grown.items() if n == "Thumb"]
+        if len(mid) < 20 or len(thumb) < 10:
+            return None
+
+        # Cut the slab across its width (front -Y = index side) in proportion to typical finger widths.
+        y0 = percentile([v.y for v in mid], 0.02)
+        y1 = percentile([v.y for v in mid], 0.98)
+        total = sum(FUSED_FINGER_WIDTHS)
+        edges, acc = [y0], 0.0
+        for w in FUSED_FINGER_WIDTHS:
+            acc += w
+            edges.append(y0 + (y1 - y0) * acc / total)
+
+        def strip(y):
+            return FINGERS[sum(1 for e in edges[1:-1] if y > e)]
+
+        owner = {}
+        for i, n in grown.items():
+            if n == "Thumb":
+                owner[i] = "Thumb"
+            elif abs(self.verts[i].x - self.cx) >= knuckle_x - 0.05 * hand_len:
+                owner[i] = strip(self.verts[i].y)
+
+        fingers = {}
+        for k, name in enumerate(FINGERS):
+            band = [v for v in mid if edges[k] <= v.y <= edges[k + 1]]
+            members = [self.verts[i] for i in slab if owner.get(i) == name]
+            if not band or not members:
+                return None
+            c = centroid(band)
+            fingers[name] = (c.y, c.z, max(abs(v.x - self.cx) for v in members))
+
+        # Thumb bone: from the end that joins the palm to the farthest point of the thumb.
+        by_reach = sorted(thumb, key=lambda v: abs(v.x - self.cx))
+        root = centroid(by_reach[:max(5, len(thumb) // 6)])
+        thumb_tip = max(thumb, key=lambda v: (v - root).length)
+        return fingers, owner, root, thumb_tip
 
 
 def split_1d(items, k):

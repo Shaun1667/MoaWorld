@@ -120,8 +120,8 @@ namespace MoaWorld
 
         [Header("Economy (confirmed values)")]
         public int coinDespawnMinutes = 15;
-        public float moaBoxHealMinutes = 1f;      // shortened from the design doc's 10 minutes at the user's request
         public float moaBoxInteractRange = 3f;
+        public float healerInteractRange = 3f;
         public float shopInteractRange = 3f;
         public float coinPickupRadius = 1.5f;
         public int maxPartySize = 6;
@@ -133,11 +133,18 @@ namespace MoaWorld
         public float dayNightPhaseMinutes = 15f; // day lasts this long, then night lasts this long
         public int maxPlayers = 20;
 
+        [Header("Audio")]
+        [Range(0f, 1f)] public float musicVolume = 0.35f;
+        [Range(0f, 1f)] public float ballThrowVolume = 0.9f;
+        public float sfxFullVolumeDistance = 8f; // the camera sits about this far behind the local player
+        public float sfxMaxDistance = 35f;
+
         [Header("Network")]
         public ushort gamePort = 7777;
         public ushort discoveryPort = 47777;
         public float discoveryBroadcastSeconds = 1f;
         public float discoveryRoomTimeoutSeconds = 3f;
+        public int joinTimeoutSeconds = 10;       // give up joining after this long (one attempt per second)
 
         [Header("Save (host PC)")]
         public string saveFileName = "world.json";   // stored under Application.persistentDataPath

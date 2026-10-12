@@ -60,6 +60,16 @@ namespace MoaWorld
             return removed;
         }
 
+        // Server only. The owner's copy updates through the regular snapshot sync.
+        public void HealAll()
+        {
+            foreach (MoaInstance moa in members)
+            {
+                moa.currentHp = moa.MaxHp;
+            }
+            Changed?.Invoke();
+        }
+
         public int IndexOf(MoaInstance moa)
         {
             return members.IndexOf(moa);

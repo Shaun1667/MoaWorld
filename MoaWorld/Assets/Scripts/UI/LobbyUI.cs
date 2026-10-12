@@ -46,13 +46,15 @@ namespace MoaWorld
 
         private void Update()
         {
-            bool show = GameSession.Instance != null && !GameSession.Instance.IsInSession;
+            GameSession session = GameSession.Instance;
+            // Stays up while joining so the player sees "접속 중" instead of an empty world.
+            bool show = session != null && (!session.IsInSession || session.IsJoining);
             if (panel.activeSelf != show)
             {
                 panel.SetActive(show);
                 SetMenuState(show);
             }
-            if (show && Time.unscaledTime >= nextRefreshTime)
+            if (show && !session.IsInSession && Time.unscaledTime >= nextRefreshTime)
             {
                 nextRefreshTime = Time.unscaledTime + RefreshInterval;
                 RefreshRooms();
@@ -99,12 +101,16 @@ namespace MoaWorld
 
         private void OnHostClicked()
         {
+            if (GameSession.Instance.IsInSession)
+            {
+                return;
+            }
             statusText.text = GameSession.Instance.HostWorld() ? string.Empty : "방을 열 수 없어요. 포트가 이미 사용 중인지 확인해 주세요";
         }
 
         private void OnRoomClicked(int index)
         {
-            if (index >= listedRooms.Count)
+            if (GameSession.Instance.IsInSession || index >= listedRooms.Count)
             {
                 return;
             }
@@ -114,7 +120,7 @@ namespace MoaWorld
                 statusText.text = "방이 가득 찼어요";
                 return;
             }
-            statusText.text = GameSession.Instance.Join(room) ? string.Empty : "방에 참가할 수 없어요";
+            statusText.text = GameSession.Instance.Join(room) ? $"{room.hostName}의 월드에 접속 중..." : "방에 참가할 수 없어요";
         }
 
         private void OnSessionEnded(string reason)

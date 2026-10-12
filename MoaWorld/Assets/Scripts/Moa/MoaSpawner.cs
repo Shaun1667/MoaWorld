@@ -160,7 +160,8 @@ namespace MoaWorld
                     && hit.collider.GetComponentInParent<WildMoa>() == null
                     && hit.collider.GetComponentInParent<CharacterController>() == null
                     && hit.collider.GetComponentInParent<MoaBox>() == null
-                    && hit.collider.GetComponentInParent<Shop>() == null)
+                    && hit.collider.GetComponentInParent<Shop>() == null
+                    && hit.collider.GetComponentInParent<MoaHealer>() == null)
                 {
                     point = hit.point;
                     return true;

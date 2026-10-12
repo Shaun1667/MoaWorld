@@ -27,6 +27,8 @@ GameObject:
   - component: {fileID: 7305980294318010463}
   - component: {fileID: 6949741677544721213}
   - component: {fileID: 6497998674069059217}
+  - component: {fileID: 1231751784234673522}
+  - component: {fileID: 7419551785866377584}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -348,6 +350,32 @@ MonoBehaviour:
   - {fileID: 1307126677409129662, guid: c0358980c7b4f4b4f8542d3a4d3d53b2, type: 3}
   - {fileID: 6440343011347372539, guid: 70e05aee6eeb499479406ab74c55edbd, type: 3}
   placeholder: {fileID: 4521561423135697691}
+--- !u!114 &1231751784234673522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b326e3df267a6c648a54949ca2cd7d81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerSounds
+  ballThrow: {fileID: 8300000, guid: d4cba07a3252aa84f82f8d295b27f0d0, type: 3}
+--- !u!114 &7419551785866377584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778256748590912604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7abbab6077c7c4b499e996c097b3d5bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MoaWorld.PlayerHealerUse
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &4521561423135697691
 GameObject:
   m_ObjectHideFlags: 0

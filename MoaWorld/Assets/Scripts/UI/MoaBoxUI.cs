@@ -81,22 +81,8 @@ namespace MoaWorld
             Color elementColor = GameConfig.Instance.GetElementColor(moa.Species.element);
             view.background.color = moa.IsFainted ? FaintedSlotColor : Color.Lerp(elementColor, Color.black, 0.55f);
 
-            string status = string.Empty;
-            if (storedEntry != null && moa.currentHp < moa.MaxHp)
-            {
-                status = $"\n회복까지 {FormatTime(box.HealRemainingSeconds(storedEntry))}";
-            }
-            else if (storedEntry == null && moa.IsFainted)
-            {
-                status = "\n기절";
-            }
+            string status = storedEntry == null && moa.IsFainted ? "\n기절" : string.Empty;
             view.label.text = $"{moa.Species.displayName} Lv.{moa.level}\nHP {Mathf.CeilToInt(moa.currentHp)}/{moa.MaxHp}{status}";
-        }
-
-        private static string FormatTime(float seconds)
-        {
-            int total = Mathf.CeilToInt(seconds);
-            return $"{total / 60}:{total % 60:00}";
         }
 
         private void OnPartySlotClicked(int slot)
